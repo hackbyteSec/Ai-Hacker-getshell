@@ -1,4 +1,4 @@
-# 🔥 SKILLHack 在线自动GetShell （可批量和单站进行自动化渗透测试）
+# 🔥 SKILLHack 在线自动GetShell （可批量和单站进行自动渗透）
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Web-FF6B6B?style=for-the-badge" alt="Web Platform"/>
