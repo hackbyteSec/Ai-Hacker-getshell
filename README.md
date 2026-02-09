@@ -1,14 +1,7 @@
 # 🔥 SKILLHack 在线自动GetShell Ai自动化渗透测试平台
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Web-FF6B6B?style=for-the-badge" alt="Web Platform"/>
-  <img src="https://img.shields.io/badge/FOFA-Integration-00ADD8?style=for-the-badge" alt="FOFA"/>
-  <img src="https://img.shields.io/badge/AI-Powered-3776AB?style=for-the-badge" alt="AI Powered"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
-</p>
-
-<p align="center">
-  <b>🎯 一站式资产测绘与漏洞风险洞察平台 | FOFA + AI + 智能扫描 [一键GetSe]</b>
+  <b>🎯 一站式资产测绘与漏洞风险洞察平台 | FOFA + AI + 智能扫描 [一键GetShell]</b>
 </p>
 
 <p align="center">
@@ -20,6 +13,17 @@
 ## 📖 项目简介
 
 **SKILLHack Ai自动化渗透测试平台**是由 [黑客字节社区（HackByte）](https://hackbyte.io) 开发的一款集成化安全测试平台。平台将互联网资产搜索、漏洞扫描、DDoS 流量观测与 AI 安全助手融合在同一套界面中，帮助安全研究人员快速摸清攻击面、定位高危资产，并持续监控风险变化。
+
+<p align="center">
+<img width="2146" height="1771" alt="60209-160531" src="https://github.com/user-attachments/assets/a9a6b569-bc34-4cd8-8459-bb91272e93e6" /><img width="2643" height="1715" alt="0209-160912" src="https://github.com/user-attachments/assets/4f800761-49b9-4507-b08d-bf21282f5023" />
+<img width="2634" height="1711" alt="09-160955" src="https://github.com/user-attachments/assets/971e7b5a-cba7-44b1-9714-ad268b54a395" />
+<img width="2634" height="1711" alt="09-160955" src="https://github.com/user-attachments/assets/4c1debd9-7570-418e-9e59-7a78273a4ca6" />
+<img width="2636" height="1701" alt="260209-161159" src="https://github.com/user-attachments/assets/e3213cfc-b9a6-40f3-83a0-b57c0a1a8f24" />
+<img width="2657" height="1717" alt="0260209-161112" src="https://github.com/user-attachments/assets/c6bd2386-3827-4591-b754-485be2bf5092" />
+<img width="2642" height="1711" alt="0209-161053" src="https://github.com/user-attachments/assets/07fe125b-5342-4bbd-ad00-7356edc082ff" />
+<img width="2644" height="1718" alt="0260209-161039" src="https://github.com/user-attachments/assets/82cf3bd4-7e69-4438-94fc-c3c61c8c0107" />
+<img width="2636" height="1711" alt="0209-161024" src="https://github.com/user-attachments/assets/0a6d7b4b-b8f0-4b83-a89f-0edd953a688b" />
+</p>
 
 ### 🎯 核心价值
 
@@ -269,7 +273,7 @@ is_domain=true                              # 仅显示主域名
 
 直接在 AI 助手中输入自然语言：
 ```
-"找出所有使用 Apache 的中国政府网站"
+"找出所有使用 Apache 的xxx网站"
 "搜索开放 3306 端口的 MySQL 服务器"
 "查询标题包含'管理后台'且使用 Tomcat 的站点"
 ```
