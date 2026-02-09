@@ -1,4 +1,4 @@
-# 🔥 SKILLHack 在线自动GetShell （可批量和单站进行自动渗透）
+# 🔥 SKILLHack 在线自动GetShell Ai自动化渗透测试平台
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Web-FF6B6B?style=for-the-badge" alt="Web Platform"/>
@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <b>🎯 一站式资产测绘与漏洞风险洞察平台 | FOFA + AI + 智能扫描</b>
+  <b>🎯 一站式资产测绘与漏洞风险洞察平台 | FOFA + AI + 智能扫描 [一键GetSe]</b>
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 
 ## 📖 项目简介
 
-**XHSecTeam 资产安全测绘平台**是由 [黑客字节社区（HackByte）](https://hackbyte.io) 开发的一款集成化安全测试平台。平台将互联网资产搜索、漏洞扫描、DDoS 流量观测与 AI 安全助手融合在同一套界面中，帮助安全研究人员快速摸清攻击面、定位高危资产，并持续监控风险变化。
+**SKILLHack Ai自动化渗透测试平台**是由 [黑客字节社区（HackByte）](https://hackbyte.io) 开发的一款集成化安全测试平台。平台将互联网资产搜索、漏洞扫描、DDoS 流量观测与 AI 安全助手融合在同一套界面中，帮助安全研究人员快速摸清攻击面、定位高危资产，并持续监控风险变化。
 
 ### 🎯 核心价值
 
