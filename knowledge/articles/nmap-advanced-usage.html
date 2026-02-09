@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nmap高级扫描技术与实战应用 - XHSecTeam安全知识库</title>
+    <meta name="description" content="掌握Nmap从基础到高级的所有扫描技术，包括主机发现、端口扫描、服务识别、操作系统检测、NSE脚本使用等核心功能。">
+    <meta name="keywords" content="Nmap,端口扫描,渗透测试,主机发现,服务识别,NSE脚本,网络扫描">
+    <meta name="author" content="XHSecTeam">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://xhsecteam.com/knowledge/articles/nmap-advanced-usage.html">
+    
+    <link rel="stylesheet" href="../../static/css/common.css">
+    <script src="../../static/css/common.js"></script>
+    <script src="../../static/js/layout.js"></script>
+    <style>
+        .article-container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
+        .article-layout { display: grid; grid-template-columns: 1fr 280px; gap: 40px; }
+        .article-header { margin-bottom: 32px; }
+        .article-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+        .article-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .article-breadcrumb a:hover { color: var(--accent-green); }
+        .article-breadcrumb svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .article-title { font-size: 32px; font-weight: 800; color: var(--text-primary); line-height: 1.3; margin-bottom: 16px; }
+        .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+        .article-meta-item { display: flex; align-items: center; gap: 6px; }
+        .article-meta-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; color: var(--text-tertiary); }
+        .article-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .article-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .article-tag { padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); text-decoration: none; }
+        .article-content { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 32px; }
+        .article-content h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 2px solid rgba(16, 185, 129, 0.3); }
+        .article-content h2:first-child { margin-top: 0; }
+        .article-content h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 24px 0 12px; }
+        .article-content p { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 16px; }
+        .article-content ul, .article-content ol { margin: 16px 0; padding-left: 24px; }
+        .article-content li { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 8px; }
+        .article-content code { background: rgba(16, 185, 129, 0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 14px; }
+        .article-content pre { background: #1e293b; border-radius: 12px; padding: 20px; overflow-x: auto; margin: 20px 0; }
+        .article-content pre code { background: none; color: #e2e8f0; padding: 0; font-size: 13px; line-height: 1.6; }
+        .article-content blockquote { border-left: 4px solid var(--accent-green); background: rgba(16, 185, 129, 0.05); padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .article-content blockquote p { margin: 0; color: var(--text-primary); }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        .article-content th, .article-content td { padding: 12px 16px; text-align: left; border: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-content th { background: rgba(248, 250, 252, 0.9); font-weight: 600; color: var(--text-primary); }
+        .article-sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .article-toc { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 20px; position: sticky; top: 24px; }
+        .article-toc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .article-toc-title svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; color: var(--accent-green); }
+        .article-toc-list { display: flex; flex-direction: column; gap: 10px; }
+        .article-toc-item { font-size: 13px; color: var(--text-secondary); text-decoration: none; padding-left: 12px; border-left: 2px solid transparent; transition: all 0.2s; }
+        .article-toc-item:hover { color: var(--accent-green); }
+        .article-toc-item.active { color: var(--accent-green); border-left-color: var(--accent-green); }
+        .article-toc-item.sub { padding-left: 24px; font-size: 12px; }
+        .article-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; padding-top: 32px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-nav-item { padding: 20px; background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; text-decoration: none; }
+        .article-nav-item:hover { border-color: var(--accent-green); }
+        .article-nav-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+        .article-nav-title { font-size: 14px; font-weight: 600; color: var(--accent-green); }
+        .article-nav-item.next { text-align: right; }
+        @media (max-width: 960px) { .article-layout { grid-template-columns: 1fr; } .article-sidebar { order: -1; } .article-toc { position: static; } }
+        @media (max-width: 640px) { .article-container { padding: 16px; } .article-title { font-size: 24px; } .article-content { padding: 20px; } .article-nav { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main-layout" style="margin-left: 0; margin-right: 0;">
+        <article class="content article-container" itemscope itemtype="https://schema.org/TechArticle">
+            <header class="article-header">
+                <nav class="article-breadcrumb">
+                    <a href="../index.html">知识库</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <a href="../index.html?cat=tools">安全工具</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>Nmap</span>
+                </nav>
+                <h1 class="article-title" itemprop="headline">Nmap高级扫描技术与实战应用</h1>
+                <div class="article-meta">
+                    <span class="article-badge">安全工具</span>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <time datetime="2024-12-15" itemprop="datePublished">2024-12-15</time>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>1,562 阅读</span>
+                    </div>
+                </div>
+                <div class="article-tags">
+                    <a href="../index.html?tag=nmap" class="article-tag">Nmap</a>
+                    <a href="../index.html?tag=port" class="article-tag">端口扫描</a>
+                    <a href="../index.html?tag=pentest" class="article-tag">渗透测试</a>
+                </div>
+            </header>
+            
+            <div class="article-layout">
+                <div class="article-content" itemprop="articleBody">
+                    <h2 id="intro">一、Nmap简介</h2>
+                    <p>Nmap（Network Mapper）是一款开源的网络探测和安全审核工具，被誉为"扫描之王"。它能够快速扫描大型网络，发现活跃主机、开放端口、运行服务和操作系统等信息。</p>
+                    
+                    <blockquote>
+                        <p>Nmap是每个渗透测试人员和安全工程师必须掌握的工具，也是信息收集阶段最重要的工具之一。</p>
+                    </blockquote>
+                    
+                    <h2 id="install">二、安装与配置</h2>
+                    <pre><code># Linux
+sudo apt install nmap
+
+# macOS
+brew install nmap
+
+# Windows
+# 下载安装包：https://nmap.org/download.html</code></pre>
+                    
+                    <h2 id="discovery">三、主机发现</h2>
+                    <p>在进行端口扫描之前，首先需要确定目标网络中的活跃主机。</p>
+                    
+                    <h3 id="ping">3.1 Ping扫描</h3>
+                    <pre><code># ICMP Echo扫描（需要root权限）
+nmap -sn 192.168.1.0/24
+
+# ARP扫描（局域网最有效）
+nmap -PR 192.168.1.0/24
+
+# TCP SYN Ping
+nmap -PS22,80,443 192.168.1.0/24
+
+# UDP Ping
+nmap -PU53 192.168.1.0/24</code></pre>
+                    
+                    <h2 id="portscan">四、端口扫描技术</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>扫描类型</th>
+                                <th>参数</th>
+                                <th>特点</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>TCP SYN扫描</td>
+                                <td>-sS</td>
+                                <td>半开放扫描，速度快，隐蔽</td>
+                            </tr>
+                            <tr>
+                                <td>TCP Connect扫描</td>
+                                <td>-sT</td>
+                                <td>完整三次握手，可被日志记录</td>
+                            </tr>
+                            <tr>
+                                <td>UDP扫描</td>
+                                <td>-sU</td>
+                                <td>扫描UDP端口，速度慢</td>
+                            </tr>
+                            <tr>
+                                <td>FIN扫描</td>
+                                <td>-sF</td>
+                                <td>绕过某些防火墙</td>
+                            </tr>
+                            <tr>
+                                <td>NULL扫描</td>
+                                <td>-sN</td>
+                                <td>隐蔽扫描</td>
+                            </tr>
+                            <tr>
+                                <td>Xmas扫描</td>
+                                <td>-sX</td>
+                                <td>设置FIN/PSH/URG标志</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3 id="syn">4.1 SYN扫描（推荐）</h3>
+                    <pre><code># SYN扫描（默认，需要root权限）
+sudo nmap -sS 192.168.1.1
+
+# 扫描常用端口
+sudo nmap -sS --top-ports 100 192.168.1.1
+
+# 扫描所有端口
+sudo nmap -sS -p- 192.168.1.1
+
+# 扫描指定端口范围
+sudo nmap -sS -p 1-1000 192.168.1.1</code></pre>
+                    
+                    <h2 id="service">五、服务识别</h2>
+                    <pre><code># 服务版本探测
+nmap -sV 192.168.1.1
+
+# 更详细的版本探测
+nmap -sV --version-intensity 5 192.168.1.1
+
+# 操作系统识别
+sudo nmap -O 192.168.1.1
+
+# 综合扫描
+sudo nmap -A 192.168.1.1</code></pre>
+                    
+                    <h2 id="nse">六、NSE脚本引擎</h2>
+                    <p>Nmap脚本引擎（NSE）是Nmap最强大的功能之一，提供了数百个脚本用于漏洞检测、信息收集等。</p>
+                    
+                    <pre><code># 使用默认脚本
+nmap -sC 192.168.1.1
+
+# 漏洞扫描
+nmap --script vuln 192.168.1.1
+
+# SMB漏洞检测
+nmap --script smb-vuln* 192.168.1.1
+
+# HTTP相关脚本
+nmap --script http-* 192.168.1.1 -p 80,443
+
+# 暴力破解
+nmap --script brute 192.168.1.1</code></pre>
+                    
+                    <h2 id="evasion">七、防火墙/IDS规避</h2>
+                    <pre><code># 分片扫描
+nmap -f 192.168.1.1
+
+# 使用诱饵
+nmap -D RND:10 192.168.1.1
+
+# 指定源端口
+nmap --source-port 53 192.168.1.1
+
+# 随机化扫描顺序
+nmap --randomize-hosts 192.168.1.0/24
+
+# 调整扫描速度
+nmap -T0 192.168.1.1  # 极慢，隐蔽
+nmap -T4 192.168.1.1  # 快速</code></pre>
+                    
+                    <h2 id="output">八、输出格式</h2>
+                    <pre><code># 正常输出
+nmap 192.168.1.1 -oN scan.txt
+
+# XML格式
+nmap 192.168.1.1 -oX scan.xml
+
+# Grepable格式
+nmap 192.168.1.1 -oG scan.grep
+
+# 所有格式
+nmap 192.168.1.1 -oA scan</code></pre>
+                    
+                    <h2 id="summary">九、实战案例</h2>
+                    <pre><code># 完整渗透测试扫描
+sudo nmap -sS -sV -O -A --script=vuln -p- -T4 target.com -oA full_scan
+
+# 快速资产发现
+sudo nmap -sn -PR 192.168.1.0/24 -oG - | grep "Up" | cut -d " " -f 2
+
+# Web服务器发现
+nmap -sS -p 80,443,8080,8443 --open 192.168.1.0/24</code></pre>
+                </div>
+                
+                <aside class="article-sidebar">
+                    <nav class="article-toc">
+                        <h2 class="article-toc-title">
+                            <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            目录
+                        </h2>
+                        <div class="article-toc-list">
+                            <a href="#intro" class="article-toc-item active">一、Nmap简介</a>
+                            <a href="#install" class="article-toc-item">二、安装与配置</a>
+                            <a href="#discovery" class="article-toc-item">三、主机发现</a>
+                            <a href="#portscan" class="article-toc-item">四、端口扫描技术</a>
+                            <a href="#service" class="article-toc-item">五、服务识别</a>
+                            <a href="#nse" class="article-toc-item">六、NSE脚本引擎</a>
+                            <a href="#evasion" class="article-toc-item">七、防火墙规避</a>
+                            <a href="#output" class="article-toc-item">八、输出格式</a>
+                            <a href="#summary" class="article-toc-item">九、实战案例</a>
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+            
+            <nav class="article-nav">
+                <a href="xss-attack-defense.html" class="article-nav-item prev">
+                    <div class="article-nav-label">← 上一篇</div>
+                    <div class="article-nav-title">XSS跨站脚本攻击与防御实战</div>
+                </a>
+                <a href="reverse-shell-techniques.html" class="article-nav-item next">
+                    <div class="article-nav-label">下一篇 →</div>
+                    <div class="article-nav-title">反弹Shell技术大全与免杀绕过</div>
+                </a>
+            </nav>
+        </article>
+    </div>
+    
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"TechArticle","headline":"Nmap高级扫描技术与实战应用","description":"掌握Nmap从基础到高级的所有扫描技术","author":{"@type":"Organization","name":"XHSecTeam"},"datePublished":"2024-12-15"}
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

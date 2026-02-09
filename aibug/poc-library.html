@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>POC漏洞库 - XHSecTeam</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        /* POC漏洞库页面特有样式 */
+        .poc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            margin-top: 4px;
+        }
+        .poc-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-left: 6px;
+        }
+        .poc-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .poc-title-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .poc-subtitle {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        .poc-header-right {
+            display: none;
+        }
+        .poc-search-box {
+            display: flex;
+            align-items: center;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 999px;
+            padding: 0 4px 0 14px;
+            width: 280px;
+            transition: all 0.2s;
+        }
+        .poc-search-box:focus-within {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+        .poc-search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .poc-search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .poc-search-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--accent-green);
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .poc-search-btn:hover {
+            background: #059669;
+        }
+        .poc-search-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* 统计卡片 */
+        .poc-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .poc-stat-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        }
+        .poc-stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+        .poc-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .poc-stat-card.critical .poc-stat-value { color: #dc2626; }
+        .poc-stat-card.high .poc-stat-value { color: #ea580c; }
+        .poc-stat-card.medium .poc-stat-value { color: #d97706; }
+        .poc-stat-card.low .poc-stat-value { color: #2563eb; }
+
+        /* POC列表容器 */
+        .poc-container {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+        }
+        .poc-container-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.65));
+        }
+        .poc-container-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .poc-container-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: linear-gradient(180deg, #10b981, #06b6d4);
+            border-radius: 2px;
+        }
+        .poc-filter-tabs {
+            display: flex;
+            gap: 6px;
+        }
+        .poc-filter-tab {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(248, 250, 252, 0.8);
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .poc-filter-tab:hover {
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+        .poc-filter-tab.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+
+        /* POC列表 */
+        .poc-list {
+            overflow: visible;
+        }
+
+        /* 分页 */
+        .poc-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 18px;
+            border-top: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(248, 250, 252, 0.5);
+        }
+        .poc-page-btn {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .poc-page-btn:hover:not(:disabled) {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        .poc-page-btn.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+        .poc-page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .poc-page-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .poc-page-info {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            padding: 0 12px;
+        }
+        .poc-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .poc-item:hover {
+            background: rgba(248, 250, 252, 0.8);
+        }
+        .poc-item:last-child {
+            border-bottom: none;
+        }
+        .poc-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
+        }
+        .poc-severity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .poc-severity-dot.critical { background: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
+        .poc-severity-dot.high { background: #ea580c; box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15); }
+        .poc-severity-dot.medium { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
+        .poc-severity-dot.low { background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+        .poc-item-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .poc-item-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .poc-tag {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        .poc-tag.rce { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.2); }
+        .poc-tag.sqli { background: rgba(234, 88, 12, 0.1); color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.2); }
+        .poc-tag.xss { background: rgba(217, 119, 6, 0.1); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.2); }
+        .poc-tag.lfi { background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.2); }
+        .poc-tag.auth { background: rgba(139, 92, 246, 0.1); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.2); }
+        .poc-tag.info { background: rgba(100, 116, 139, 0.1); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
+        .poc-date {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .poc-action-btn {
+            height: 26px;
+            padding: 0 10px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 999px;
+            color: #059669;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .poc-action-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        @media (max-width: 900px) {
+            .poc-stats { grid-template-columns: repeat(2, 1fr); }
+            .poc-search-box { width: 200px; }
+        }
+        @media (max-width: 600px) {
+            .poc-stats { grid-template-columns: 1fr; }
+            .poc-header { flex-direction: column; align-items: flex-start; }
+            .poc-search-box { width: 100%; }
+        }
+
+        /* AI输入框扩展样式 */
+        .ai-input-wrap {
+            position: relative;
+        }
+        .ai-input-wrap .ai-input {
+            min-height: 40px;
+            max-height: 380px;
+            resize: none;
+            overflow-y: auto;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .ai-input-wrap .ai-input::-webkit-scrollbar {
+            display: none;
+        }
+        .ai-input-tip {
+            position: absolute;
+            right: 50px;
+            bottom: 10px;
+            font-size: 11px;
+            color: #ef4444;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .ai-input-tip.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏占位符 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <div class="main-layout">
+        <main class="content">
+            <!-- 浮动导航占位符 -->
+            <div class="floating-nav" id="floatingNav"></div>
+
+            <!-- 页面头部 -->
+            <div class="poc-header">
+                <div class="poc-header-left">
+                    <div class="poc-title">
+                        POC漏洞库
+                        <span class="poc-title-badge">EXPLOIT DB</span>
+                    </div>
+                    <div class="poc-subtitle">收录常见CMS、框架、中间件的漏洞利用代码，支持关键词搜索与AI智能分析</div>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="poc-stats">
+                <div class="poc-stat-card critical">
+                    <div class="poc-stat-value" id="statCritical">5</div>
+                    <div class="poc-stat-label">严重漏洞 POC</div>
+                </div>
+                <div class="poc-stat-card high">
+                    <div class="poc-stat-value" id="statHigh">8</div>
+                    <div class="poc-stat-label">高危漏洞 POC</div>
+                </div>
+                <div class="poc-stat-card medium">
+                    <div class="poc-stat-value" id="statMedium">5</div>
+                    <div class="poc-stat-label">中危漏洞 POC</div>
+                </div>
+                <div class="poc-stat-card low">
+                    <div class="poc-stat-value" id="statLow">2</div>
+                    <div class="poc-stat-label">低危漏洞 POC</div>
+                </div>
+            </div>
+
+            <!-- POC列表 -->
+            <div class="poc-container">
+                <div class="poc-container-header">
+                    <div class="poc-container-title">漏洞利用代码库</div>
+                    <div class="poc-filter-tabs">
+                        <button class="poc-filter-tab active" data-filter="all" onclick="filterPoc('all')">全部</button>
+                        <button class="poc-filter-tab" data-filter="critical" onclick="filterPoc('critical')">严重</button>
+                        <button class="poc-filter-tab" data-filter="high" onclick="filterPoc('high')">高危</button>
+                        <button class="poc-filter-tab" data-filter="medium" onclick="filterPoc('medium')">中危</button>
+                        <button class="poc-filter-tab" data-filter="low" onclick="filterPoc('low')">低危</button>
+                    </div>
+                </div>
+                <div class="poc-list" id="pocList"></div>
+                <div class="poc-pagination" id="pocPagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- AI 安全助手面板 -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <div class="ai-title">AI 安全助手</div>
+        </div>
+        <div class="ai-shortcuts">
+            <button class="ai-shortcut" onclick="aiQuick('analyze')">分析选中POC</button>
+            <button class="ai-shortcut" onclick="aiQuick('exploit')">漏洞利用建议</button>
+            <button class="ai-shortcut" onclick="aiQuick('patch')">修复方案</button>
+        </div>
+        <div class="ai-body" id="aiMessages">
+            <div class="ai-message assistant">
+                你好，这里是 POC 漏洞库的 AI 安全助手。<br>
+                我可以帮你：<br>
+                • 分析 POC 的利用原理和影响范围<br>
+                • 根据关键词搜索相关漏洞<br>
+                • 提供漏洞修复和加固建议<br>
+                • 评估漏洞的危害等级<br><br>
+                输入关键词或 CVE 编号，我来帮你分析。
+            </div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" onclick="window.location.href='single.html'">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span>单站扫描</span>
+                </button>
+                <button class="tool-btn" onclick="window.location.href='index.html'">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>批量扫描</span>
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea id="aiInput" class="ai-input" rows="1" placeholder="输入关键词让Ai分析 POC" maxlength="500" oninput="checkInputLimit(this)"></textarea>
+                <div class="ai-input-tip" id="inputTip"></div>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 演示 POC 数据（50条）
+        const pocData = [
+            { id: 1, title: 'ThinkPHP 5.x 远程代码执行漏洞 (CVE-2018-20062)', severity: 'critical', tag: 'rce', date: '2024-12-20' },
+            { id: 2, title: 'Apache Log4j2 RCE (CVE-2021-44228)', severity: 'critical', tag: 'rce', date: '2024-12-18' },
+            { id: 3, title: 'Spring Cloud Gateway SPEL表达式注入 (CVE-2022-22947)', severity: 'critical', tag: 'rce', date: '2024-12-15' },
+            { id: 4, title: 'Fastjson 反序列化远程代码执行', severity: 'critical', tag: 'rce', date: '2024-12-12' },
+            { id: 5, title: 'Apache Shiro 权限绕过漏洞 (CVE-2020-1957)', severity: 'critical', tag: 'auth', date: '2024-12-10' },
+            { id: 6, title: '苹果CMS V10 SQL注入漏洞', severity: 'high', tag: 'sqli', date: '2024-12-08' },
+            { id: 7, title: 'Drupal Drupalgeddon2 RCE (CVE-2018-7600)', severity: 'high', tag: 'rce', date: '2024-12-05' },
+            { id: 8, title: 'WordPress File Manager 任意文件上传', severity: 'high', tag: 'rce', date: '2024-12-03' },
+            { id: 9, title: 'Weblogic T3协议反序列化漏洞 (CVE-2020-2555)', severity: 'high', tag: 'rce', date: '2024-11-28' },
+            { id: 10, title: 'Redis 未授权访问写入SSH公钥', severity: 'high', tag: 'auth', date: '2024-11-25' },
+            { id: 11, title: 'Struts2 S2-062 OGNL注入 (CVE-2021-31805)', severity: 'high', tag: 'rce', date: '2024-11-22' },
+            { id: 12, title: 'Jenkins 未授权访问漏洞', severity: 'high', tag: 'auth', date: '2024-11-20' },
+            { id: 13, title: 'Tomcat AJP 文件包含漏洞 (CVE-2020-1938)', severity: 'high', tag: 'lfi', date: '2024-11-18' },
+            { id: 14, title: 'PHPMyAdmin 4.8.x 本地文件包含', severity: 'medium', tag: 'lfi', date: '2024-11-15' },
+            { id: 15, title: 'jQuery XSS 漏洞 (CVE-2020-11023)', severity: 'medium', tag: 'xss', date: '2024-11-12' },
+            { id: 16, title: 'Nginx 错误配置导致目录遍历', severity: 'medium', tag: 'info', date: '2024-11-10' },
+            { id: 17, title: 'Apache HTTP Server 路径穿越 (CVE-2021-41773)', severity: 'medium', tag: 'lfi', date: '2024-11-08' },
+            { id: 18, title: 'GitLab SSRF 漏洞 (CVE-2021-22214)', severity: 'medium', tag: 'info', date: '2024-11-05' },
+            { id: 19, title: 'Swagger UI 未授权访问', severity: 'low', tag: 'info', date: '2024-11-02' },
+            { id: 20, title: 'Spring Boot Actuator 信息泄露', severity: 'low', tag: 'info', date: '2024-10-30' },
+            { id: 21, title: 'Confluence OGNL注入 (CVE-2022-26134)', severity: 'critical', tag: 'rce', date: '2024-10-28' },
+            { id: 22, title: 'Apache ActiveMQ RCE (CVE-2023-46604)', severity: 'critical', tag: 'rce', date: '2024-10-25' },
+            { id: 23, title: 'VMware vCenter 任意文件上传', severity: 'critical', tag: 'rce', date: '2024-10-22' },
+            { id: 24, title: 'F5 BIG-IP iControl REST RCE', severity: 'critical', tag: 'rce', date: '2024-10-20' },
+            { id: 25, title: 'Citrix ADC 目录穿越 (CVE-2019-19781)', severity: 'critical', tag: 'lfi', date: '2024-10-18' },
+            { id: 26, title: 'Exchange ProxyShell RCE (CVE-2021-34473)', severity: 'critical', tag: 'rce', date: '2024-10-15' },
+            { id: 27, title: 'Atlassian Bitbucket 命令注入', severity: 'high', tag: 'rce', date: '2024-10-12' },
+            { id: 28, title: 'Elasticsearch 未授权访问', severity: 'high', tag: 'auth', date: '2024-10-10' },
+            { id: 29, title: 'MongoDB 未授权访问', severity: 'high', tag: 'auth', date: '2024-10-08' },
+            { id: 30, title: 'Docker Remote API 未授权访问', severity: 'high', tag: 'auth', date: '2024-10-05' },
+            { id: 31, title: 'Kubernetes API Server 未授权', severity: 'high', tag: 'auth', date: '2024-10-02' },
+            { id: 32, title: 'Grafana 任意文件读取 (CVE-2021-43798)', severity: 'high', tag: 'lfi', date: '2024-09-30' },
+            { id: 33, title: 'Zabbix SQL注入 (CVE-2022-23131)', severity: 'high', tag: 'sqli', date: '2024-09-28' },
+            { id: 34, title: 'Jira SSRF 漏洞 (CVE-2022-26135)', severity: 'medium', tag: 'info', date: '2024-09-25' },
+            { id: 35, title: 'Laravel Debug模式 RCE', severity: 'medium', tag: 'rce', date: '2024-09-22' },
+            { id: 36, title: 'Django SQL注入 (CVE-2022-28346)', severity: 'medium', tag: 'sqli', date: '2024-09-20' },
+            { id: 37, title: 'Node.js 原型链污染', severity: 'medium', tag: 'rce', date: '2024-09-18' },
+            { id: 38, title: 'Ruby on Rails 任意文件读取', severity: 'medium', tag: 'lfi', date: '2024-09-15' },
+            { id: 39, title: 'Nacos 认证绕过漏洞', severity: 'high', tag: 'auth', date: '2024-09-12' },
+            { id: 40, title: 'XXL-Job 未授权访问RCE', severity: 'high', tag: 'rce', date: '2024-09-10' },
+            { id: 41, title: 'MinIO 信息泄露 (CVE-2023-28432)', severity: 'medium', tag: 'info', date: '2024-09-08' },
+            { id: 42, title: 'Harbor 权限提升漏洞', severity: 'medium', tag: 'auth', date: '2024-09-05' },
+            { id: 43, title: 'Apache Solr RCE (CVE-2019-17558)', severity: 'high', tag: 'rce', date: '2024-09-02' },
+            { id: 44, title: 'Dubbo 反序列化漏洞', severity: 'high', tag: 'rce', date: '2024-08-30' },
+            { id: 45, title: 'RocketMQ 命令执行 (CVE-2023-33246)', severity: 'critical', tag: 'rce', date: '2024-08-28' },
+            { id: 46, title: 'Apache Kafka UI RCE', severity: 'high', tag: 'rce', date: '2024-08-25' },
+            { id: 47, title: 'Nexus Repository 任意文件读取', severity: 'medium', tag: 'lfi', date: '2024-08-22' },
+            { id: 48, title: 'SonarQube 信息泄露', severity: 'low', tag: 'info', date: '2024-08-20' },
+            { id: 49, title: 'Portainer 未授权访问', severity: 'medium', tag: 'auth', date: '2024-08-18' },
+            { id: 50, title: 'Rancher 权限绕过漏洞', severity: 'high', tag: 'auth', date: '2024-08-15' }
+        ];
+
+        let currentFilter = 'all';
+        let currentPage = 1;
+        let currentKeyword = '';
+        const pageSize = 25;
+
+        function getFilteredData() {
+            let filtered = pocData;
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(p => p.severity === currentFilter);
+            }
+            if (currentKeyword) {
+                const kw = currentKeyword.toLowerCase();
+                filtered = filtered.filter(p => p.title.toLowerCase().includes(kw));
+            }
+            return filtered;
+        }
+
+        function renderPocList() {
+            const list = document.getElementById('pocList');
+            const filtered = getFilteredData();
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            
+            // 确保当前页有效
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            
+            // 分页数据
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filtered.slice(start, end);
+
+            list.innerHTML = pageData.map(poc => `
+                <div class="poc-item" data-severity="${poc.severity}" onclick="selectPoc(${poc.id})">
+                    <div class="poc-item-left">
+                        <span class="poc-severity-dot ${poc.severity}"></span>
+                        <span class="poc-item-title">${poc.title}</span>
+                    </div>
+                    <div class="poc-item-right">
+                        <span class="poc-tag ${poc.tag}">${getTagLabel(poc.tag)}</span>
+                        <span class="poc-date">${poc.date}</span>
+                        <button class="poc-action-btn" onclick="event.stopPropagation();analyzePoc(${poc.id})">AI分析POC</button>
+                    </div>
+                </div>
+            `).join('');
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-tertiary)">未找到匹配的 POC</div>';
+            }
+
+            // 渲染分页
+            renderPagination(filtered.length, totalPages);
+            
+            // 更新统计
+            updateStats();
+        }
+
+        function renderPagination(total, totalPages) {
+            const pagination = document.getElementById('pocPagination');
+            if (totalPages <= 1) {
+                pagination.innerHTML = `<span class="poc-page-info">共 ${total} 条记录</span>`;
+                return;
+            }
+
+            let html = '';
+            
+            // 上一页
+            html += `<button class="poc-page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>`;
+
+            // 页码
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<button class="poc-page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span class="poc-page-info">...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="poc-page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="poc-page-info">...</span>`;
+                html += `<button class="poc-page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // 下一页
+            html += `<button class="poc-page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>`;
+
+            // 信息
+            html += `<span class="poc-page-info">共 ${total} 条</span>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const filtered = getFilteredData();
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderPocList();
+            // 滚动到列表顶部
+            document.getElementById('pocList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateStats() {
+            const stats = { critical: 0, high: 0, medium: 0, low: 0 };
+            pocData.forEach(p => stats[p.severity]++);
+            document.getElementById('statCritical').textContent = stats.critical;
+            document.getElementById('statHigh').textContent = stats.high;
+            document.getElementById('statMedium').textContent = stats.medium;
+            document.getElementById('statLow').textContent = stats.low;
+        }
+
+        function getTagLabel(tag) {
+            const labels = { rce: 'RCE', sqli: 'SQLi', xss: 'XSS', lfi: 'LFI', auth: '认证', info: '信息' };
+            return labels[tag] || tag.toUpperCase();
+        }
+
+        function filterPoc(filter) {
+            currentFilter = filter;
+            currentPage = 1;
+            document.querySelectorAll('.poc-filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === filter);
+            });
+            renderPocList();
+        }
+
+        function searchPoc() {
+            currentKeyword = document.getElementById('pocSearchInput').value.trim();
+            currentPage = 1;
+            renderPocList();
+        }
+
+        function selectPoc(id) {
+            const poc = pocData.find(p => p.id === id);
+            if (poc) {
+                addAiMessage('user', `请分析这个漏洞：${poc.title}`);
+                setTimeout(() => {
+                    addAiMessage('assistant', generatePocAnalysis(poc));
+                }, 500);
+            }
+        }
+
+        function analyzePoc(id) {
+            const poc = pocData.find(p => p.id === id);
+            if (poc) {
+                addAiMessage('assistant', generatePocAnalysis(poc));
+            }
+        }
+
+        function generatePocAnalysis(poc) {
+            const severityText = { critical: '严重', high: '高危', medium: '中危', low: '低危' };
+            return `
+                <strong>${poc.title}</strong><br><br>
+                <strong>危害等级：</strong>${severityText[poc.severity]}<br>
+                <strong>漏洞类型：</strong>${getTagLabel(poc.tag)}<br>
+                <strong>收录时间：</strong>${poc.date}<br><br>
+                <strong>漏洞分析：</strong><br>
+                该漏洞可能导致${poc.tag === 'rce' ? '远程代码执行，攻击者可完全控制目标服务器' : 
+                poc.tag === 'sqli' ? 'SQL注入攻击，可能导致数据库信息泄露' :
+                poc.tag === 'xss' ? '跨站脚本攻击，可窃取用户Cookie或会话' :
+                poc.tag === 'lfi' ? '本地文件包含，可读取服务器敏感文件' :
+                poc.tag === 'auth' ? '认证绕过，攻击者可未授权访问系统' : '敏感信息泄露'}。<br><br>
+                <strong>修复建议：</strong><br>
+                建议及时更新到最新版本，并检查相关配置是否安全。
+            `;
+        }
+
+        function addAiMessage(role, content) {
+            const messagesDiv = document.getElementById('aiMessages');
+            const msg = document.createElement('div');
+            msg.className = `ai-message ${role}`;
+            msg.innerHTML = content;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function checkInputLimit(textarea) {
+            const tip = document.getElementById('inputTip');
+            
+            // 自动调整高度
+            textarea.style.height = 'auto';
+            const newHeight = Math.min(textarea.scrollHeight, 380);
+            textarea.style.height = newHeight + 'px';
+            
+            // 检查字数限制
+            if (textarea.value.length >= 500) {
+                tip.textContent = '只能输入五百个字符';
+                tip.classList.add('show');
+            } else {
+                tip.classList.remove('show');
+            }
+        }
+
+        function aiQuick(type) {
+            if (type === 'analyze') {
+                addAiMessage('assistant', '请在左侧列表中选择一个 POC，或输入关键词搜索你想分析的漏洞。');
+            } else if (type === 'exploit') {
+                addAiMessage('assistant', '漏洞利用建议需要根据具体目标环境评估。请告诉我目标的技术栈（如 ThinkPHP版本、Java版本等），我来帮你分析可用的利用方式。');
+            } else if (type === 'patch') {
+                addAiMessage('assistant', '通用修复建议：<br>1. 及时更新组件到最新版本<br>2. 启用WAF防护规则<br>3. 最小权限原则配置服务<br>4. 定期进行安全审计<br><br>如需针对特定漏洞的修复方案，请选择或搜索该漏洞。');
+            }
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addAiMessage('user', text);
+            input.value = '';
+            input.style.height = 'auto';
+            document.getElementById('inputTip').classList.remove('show');
+
+            // 模拟AI响应
+            setTimeout(() => {
+                const keyword = text.toLowerCase();
+                const matched = pocData.filter(p => p.title.toLowerCase().includes(keyword));
+                
+                if (matched.length > 0) {
+                    let response = `找到 ${matched.length} 个相关POC：<br><br>`;
+                    matched.slice(0, 3).forEach(p => {
+                        response += `• <strong>${p.title}</strong><br>`;
+                    });
+                    if (matched.length > 3) {
+                        response += `<br>...还有 ${matched.length - 3} 个结果，请在列表中查看。`;
+                    }
+                    response += '<br><br>点击列表中的条目可查看详细分析。';
+                    addAiMessage('assistant', response);
+                    // 更新搜索并重新渲染
+                    currentKeyword = keyword;
+                    currentPage = 1;
+                    document.getElementById('pocSearchInput').value = keyword;
+                    renderPocList();
+                } else {
+                    addAiMessage('assistant', `未在本地库中找到与 "${text}" 相关的 POC。<br><br>建议：<br>1. 尝试使用英文关键词搜索<br>2. 搜索 CVE 编号<br>3. 搜索组件名称如 ThinkPHP、Log4j 等`);
+                }
+            }, 600);
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 加载导航栏组件（子目录页面需要 basePath）
+            await XHLayout.loadNavbar({
+                activeTab: 'poc',
+                basePath: '../'
+            });
+            
+            // 加载浮动导航组件
+            await XHLayout.loadFloatingNav({
+                title: 'POC漏洞库',
+                activePage: 'poc',
+                basePath: '../',
+                extraHtml: `
+                    <div class="floating-nav-search">
+                        <input type="text" id="pocSearchInput" placeholder="搜索 POC..." class="floating-nav-search-input">
+                        <button class="floating-nav-search-btn" onclick="searchPoc()">
+                            <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="8" stroke="currentColor" fill="none" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+                        </button>
+                    </div>
+                `
+            });
+            
+            // 加载底部版权
+            XHLayout.loadFooter();
+            
+            // 渲染POC列表
+            renderPocList();
+
+            // 搜索框回车事件
+            document.getElementById('pocSearchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchPoc();
+            });
+        });
+    </script>
+</body>
+</html>

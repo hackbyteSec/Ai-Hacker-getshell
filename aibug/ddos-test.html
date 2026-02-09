@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>DDoS 压力测试 - XHSecTeam</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        .ddospt-content {
+            align-items: center;
+        }
+        .ddospt-page-header {
+            max-width: 1120px;
+            margin: 16px auto 12px;
+            text-align: right;
+        }
+        .ddospt-page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .ddospt-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+            gap: 20px;
+            margin-top: 4px;
+            max-width: 1120px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .ddospt-card {
+            background: rgba(255, 255, 255, 0.78);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            padding: 18px 18px 16px;
+        }
+        .ddospt-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+        .ddospt-header-main {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ddospt-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ddospt-title-pill {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(220, 38, 38, 0.7);
+            background: #fef2f2;
+            color: #b91c1c;
+            letter-spacing: 0.08em;
+        }
+        .ddospt-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        .ddospt-header-right {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        .ddospt-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ddospt-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .ddospt-input,
+        .ddospt-select {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+        }
+        .ddospt-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .ddospt-input:focus,
+        .ddospt-select:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.25);
+        }
+        .ddospt-hint {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        .ddospt-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .ddospt-btn {
+            min-width: 100px;
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 14px;
+        }
+        .ddospt-btn-primary {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #ffffff;
+            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.25);
+        }
+        .ddospt-btn-secondary {
+            background: #f9fafb;
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        .ddospt-safe-note {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+        .ddospt-safe-note strong {
+            color: #b91c1c;
+        }
+        .ddospt-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 16px;
+            margin-top: 12px;
+        }
+        .ddospt-status-pill {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(248, 250, 252, 0.8);
+            color: #334155;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ddospt-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #22c55e;
+        }
+        .ddospt-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .ddospt-result-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .ddospt-result-sub {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .ddospt-result-body {
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #f9fafb;
+            padding: 12px 14px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ddospt-result-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ddospt-result-label {
+            width: 72px;
+            flex-shrink: 0;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .ddospt-result-value {
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+        .ddospt-result-tip {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+        }
+        .ddospt-history {
+            margin-top: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #ffffff;
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+        .ddospt-history-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        .ddospt-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ddospt-history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .ddospt-history-target {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .ddospt-history-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+        }
+        @media (max-width: 1100px) {
+            .ddospt-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 640px) {
+            .ddospt-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .ddospt-header-right {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+            .ddospt-field-group {
+                width: 100%;
+            }
+            .ddospt-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <div class="main-layout">
+        <main class="content ddospt-content">
+            <div class="ddospt-page-header">
+                <div class="ddospt-page-title">DDoS 压力测试</div>
+            </div>
+
+            <div class="ddospt-layout">
+                <div class="ddospt-card">
+                    <div class="ddospt-header">
+                        <div class="ddospt-header-main">
+                            <div class="ddospt-title">
+                                DDoS 压力测试配置
+                                <span class="ddospt-title-pill">SAFE DEMO</span>
+                            </div>
+                            <div class="ddospt-subtitle">用于模拟配置参数和风险评估的界面，不会实际发起任何攻击流量</div>
+                        </div>
+                        <div class="ddospt-header-right">
+                            <div class="ddospt-field-group">
+                                <div class="ddospt-label">目标地址</div>
+                                <input id="ddosptTarget" class="ddospt-input" placeholder="例如 https://example.com 或 1.2.3.4:443">
+                                <div class="ddospt-hint">仅用于展示配置效果，请确保为合法授权的自有目标</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ddospt-form-grid">
+                        <div>
+                            <div class="ddospt-label">攻击类型</div>
+                            <select id="ddosptType" class="ddospt-select">
+                                <option value="syn">SYN Flood 模拟</option>
+                                <option value="http">HTTP Flood 模拟</option>
+                                <option value="udp">UDP Flood 模拟</option>
+                                <option value="mixed">混合流量模拟</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="ddospt-label">并发连接数</div>
+                            <input id="ddosptConcurrency" class="ddospt-input" placeholder="例如 2000">
+                        </div>
+                        <div>
+                            <div class="ddospt-label">每秒请求数</div>
+                            <input id="ddosptRps" class="ddospt-input" placeholder="例如 5000">
+                        </div>
+                        <div>
+                            <div class="ddospt-label">压测时长秒</div>
+                            <input id="ddosptDuration" class="ddospt-input" placeholder="例如 60">
+                        </div>
+                    </div>
+
+                    <div class="ddospt-actions" style="margin-top: 14px;">
+                        <button class="ddospt-btn ddospt-btn-primary" type="button" onclick="startDdosTest()">开始模拟</button>
+                        <button class="ddospt-btn ddospt-btn-secondary" type="button" onclick="resetDdosTest()">清空配置</button>
+                    </div>
+                    <div class="ddospt-safe-note">
+                        <strong>重要提示：</strong>本页面仅用于演示配置参数与风险提示，不会向任何目标发送真实 DDoS 流量。如需进行合法压测，请使用专业工具并取得书面授权。
+                    </div>
+                </div>
+
+                <div class="ddospt-card">
+                    <div class="ddospt-result-header">
+                        <div>
+                            <div class="ddospt-result-title">当前压测计划概览</div>
+                            <div class="ddospt-result-sub" id="ddosptResultSub">尚未配置压测参数</div>
+                        </div>
+                        <div class="ddospt-status-pill" id="ddosptStatusPill">
+                            <span class="ddospt-status-dot" id="ddosptStatusDot"></span>
+                            <span id="ddosptStatusText">待模拟</span>
+                        </div>
+                    </div>
+
+                    <div class="ddospt-result-body">
+                        <div class="ddospt-result-row">
+                            <div class="ddospt-result-label">目标</div>
+                            <div class="ddospt-result-value" id="ddosptViewTarget">未设置</div>
+                        </div>
+                        <div class="ddospt-result-row">
+                            <div class="ddospt-result-label">类型</div>
+                            <div class="ddospt-result-value" id="ddosptViewType">未选择</div>
+                        </div>
+                        <div class="ddospt-result-row">
+                            <div class="ddospt-result-label">并发</div>
+                            <div class="ddospt-result-value" id="ddosptViewConcurrency">-</div>
+                        </div>
+                        <div class="ddospt-result-row">
+                            <div class="ddospt-result-label">RPS</div>
+                            <div class="ddospt-result-value" id="ddosptViewRps">-</div>
+                        </div>
+                        <div class="ddospt-result-row">
+                            <div class="ddospt-result-label">时长</div>
+                            <div class="ddospt-result-value" id="ddosptViewDuration">-</div>
+                        </div>
+                        <div class="ddospt-result-tip" id="ddosptResultTip">
+                            配置完成后，这里会根据参数给出大致的压力等级和基础风险提示。
+                        </div>
+                    </div>
+
+                    <div class="ddospt-history">
+                        <div class="ddospt-history-title">最近模拟记录</div>
+                        <div class="ddospt-history-list" id="ddosptHistoryList">
+                            <div class="ddospt-history-item">
+                                <div class="ddospt-history-target">https://demo.example.com</div>
+                                <div class="ddospt-history-meta">HTTP Flood · 2000 并发 · 30s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function mapTypeLabel(value) {
+            if (value === 'syn') return 'SYN Flood 模拟';
+            if (value === 'http') return 'HTTP Flood 模拟';
+            if (value === 'udp') return 'UDP Flood 模拟';
+            if (value === 'mixed') return '混合流量模拟';
+            return '未选择';
+        }
+
+        function startDdosTest() {
+            var targetInput = document.getElementById('ddosptTarget');
+            var typeSelect = document.getElementById('ddosptType');
+            var concurrencyInput = document.getElementById('ddosptConcurrency');
+            var rpsInput = document.getElementById('ddosptRps');
+            var durationInput = document.getElementById('ddosptDuration');
+
+            var target = (targetInput.value || '').trim() || 'https://example.com';
+            var type = typeSelect.value;
+            var typeLabel = mapTypeLabel(type);
+            var concurrency = (concurrencyInput.value || '').trim() || '1000';
+            var rps = (rpsInput.value || '').trim() || '3000';
+            var duration = (durationInput.value || '').trim() || '60';
+
+            var statusDot = document.getElementById('ddosptStatusDot');
+            var statusText = document.getElementById('ddosptStatusText');
+            var resultSub = document.getElementById('ddosptResultSub');
+            var viewTarget = document.getElementById('ddosptViewTarget');
+            var viewType = document.getElementById('ddosptViewType');
+            var viewConcurrency = document.getElementById('ddosptViewConcurrency');
+            var viewRps = document.getElementById('ddosptViewRps');
+            var viewDuration = document.getElementById('ddosptViewDuration');
+            var resultTip = document.getElementById('ddosptResultTip');
+            var historyList = document.getElementById('ddosptHistoryList');
+
+            statusDot.style.background = '#f59e0b';
+            statusText.textContent = '正在模拟';
+            resultSub.textContent = '正在对 ' + target + ' 进行参数评估';
+
+            viewTarget.textContent = target;
+            viewType.textContent = typeLabel;
+            viewConcurrency.textContent = concurrency;
+            viewRps.textContent = rps;
+            viewDuration.textContent = duration + ' 秒';
+
+            resultTip.textContent = '根据当前参数，这次压测计划可能会对目标造成较高压力，仅建议在隔离环境和合法授权前提下使用真实工具执行。';
+
+            var itemText = target + ' · ' + typeLabel.replace(' 模拟', '') + ' · ' + concurrency + ' 并发 · ' + duration + 's';
+            var newItem = document.createElement('div');
+            newItem.className = 'ddospt-history-item';
+            newItem.innerHTML = '<div class="ddospt-history-target">' + target + '</div>'
+                + '<div class="ddospt-history-meta">' + typeLabel.replace(' 模拟', '') + ' · ' + concurrency + ' 并发 · ' + duration + 's</div>';
+            historyList.insertBefore(newItem, historyList.firstChild);
+
+            setTimeout(function() {
+                statusDot.style.background = '#22c55e';
+                statusText.textContent = '模拟完成';
+                resultSub.textContent = '已生成模拟压测计划，仅用于展示配置效果';
+            }, 600);
+        }
+
+        function resetDdosTest() {
+            document.getElementById('ddosptTarget').value = '';
+            document.getElementById('ddosptType').value = 'syn';
+            document.getElementById('ddosptConcurrency').value = '';
+            document.getElementById('ddosptRps').value = '';
+            document.getElementById('ddosptDuration').value = '';
+
+            var statusDot = document.getElementById('ddosptStatusDot');
+            var statusText = document.getElementById('ddosptStatusText');
+            var resultSub = document.getElementById('ddosptResultSub');
+
+            statusDot.style.background = '#22c55e';
+            statusText.textContent = '待模拟';
+            resultSub.textContent = '尚未配置压测参数';
+
+            document.getElementById('ddosptViewTarget').textContent = '未设置';
+            document.getElementById('ddosptViewType').textContent = '未选择';
+            document.getElementById('ddosptViewConcurrency').textContent = '-';
+            document.getElementById('ddosptViewRps').textContent = '-';
+            document.getElementById('ddosptViewDuration').textContent = '-';
+            document.getElementById('ddosptResultTip').textContent = '配置完成后，这里会根据参数给出大致的压力等级和基础风险提示。';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await XHLayout.loadNavbar({
+                activeTab: 'aisearch',
+                basePath: '../'
+            });
+
+            XHLayout.loadFooter();
+            resetDdosTest();
+        });
+    </script>
+</body>
+</html>

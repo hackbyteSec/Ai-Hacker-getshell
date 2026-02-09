@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
+  <defs>
+    <linearGradient id="kbLine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+    </linearGradient>
+    <style>
+      .kbStroke{fill:none;stroke:url(#kbLine);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+      .kbNode{fill:#ffffff;stroke:url(#kbLine);stroke-width:1.8}
+      .kbPulse{transform-origin:var(--cx) var(--cy);animation:kbPulse 2.6s ease-in-out infinite}
+      .kbDash{stroke-dasharray:6 10;animation:kbDash 10s linear infinite}
+      @keyframes kbDash{to{stroke-dashoffset:-120}}
+      @keyframes kbPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.75}}
+      @media (prefers-reduced-motion: reduce){.kbPulse,.kbDash{animation:none}}
+    </style>
+  </defs>
+
+  <path class="kbStroke kbDash" d="M54 136 L120 70 L188 120 L252 64"/>
+  <path class="kbStroke" d="M54 136 L86 176 L188 120" opacity="0.55"/>
+  <path class="kbStroke" d="M120 70 L86 176 L252 64" opacity="0.55"/>
+
+  <circle class="kbNode kbPulse" style="--cx:54px;--cy:136px" cx="54" cy="136" r="7"/>
+  <circle class="kbNode kbPulse" style="--cx:120px;--cy:70px;animation-delay:.3s" cx="120" cy="70" r="7"/>
+  <circle class="kbNode kbPulse" style="--cx:188px;--cy:120px;animation-delay:.6s" cx="188" cy="120" r="7"/>
+  <circle class="kbNode kbPulse" style="--cx:252px;--cy:64px;animation-delay:.9s" cx="252" cy="64" r="7"/>
+  <circle class="kbNode kbPulse" style="--cx:86px;--cy:176px;animation-delay:1.2s" cx="86" cy="176" r="7"/>
+
+  <path class="kbStroke" d="M210 170 C230 150 252 150 270 168" opacity="0.5"/>
+  <circle class="kbNode" cx="210" cy="170" r="5" opacity="0.75"/>
+  <circle class="kbNode" cx="270" cy="168" r="5" opacity="0.75"/>
+</svg>

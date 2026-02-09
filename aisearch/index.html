@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资产测绘 - XHSecTeam</title>
+    <link rel="stylesheet" href="../static/css/common.css">
+    <link rel="stylesheet" href="../static/css/aisearch.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+</head>
+<body>
+    <!-- 加载 -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 左侧导航栏 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <!-- 主布局 -->
+    <div class="main-layout" id="mainLayout">
+        <!-- 主内容区 -->
+        <main class="content">
+            <!-- 页面标题 -->
+            <div class="page-title">
+                <h1>资产测绘</h1>
+                <p>Asset Mapping & Discovery</p>
+            </div>
+
+            <!-- 结果栏 -->
+            <div class="result-bar" id="resultBar" style="display: none;">
+                <div class="result-info">
+                    <span class="result-count"><span id="totalCount">0</span> 条结果</span>
+                    <span class="result-time" id="queryTime"></span>
+                </div>
+                <div class="result-actions">
+                    <button class="action-btn active">列表</button>
+                    <button class="action-btn" id="exportBtn">导出</button>
+                </div>
+            </div>
+
+            <!-- 资产列表 -->
+            <div class="asset-list" id="assetList">
+                <div class="empty-state">
+                    <div class="empty-text">请在右侧 AI 助手中输入搜索语句</div>
+                    <div class="empty-hint" style="margin-top: 12px; font-size: 12px; line-height: 1.8;">
+                        <strong>搜索语法示例：</strong><br>
+                        • <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">title="后台"</code> - 搜索标题包含"后台"的资产<br>
+                        • <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">ip="1.1.1.1"</code> - 搜索指定IP<br>
+                        • <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">domain="gov.cn"</code> - 搜索指定域名<br>
+                        • <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">port="3306"</code> - 搜索指定端口<br>
+                        • <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">body="password"</code> - 搜索内容包含关键词
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination" style="display: none;"></div>
+        </main>
+    </div>
+
+    <!-- 右侧 AI 面板 -->
+    <aside class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <span class="ai-title">AI 资产搜索助手</span>
+        </div>
+        <div class="ai-shortcuts">
+            <span class="ai-shortcut" data-query='title=""'>title= 标题</span>
+            <span class="ai-shortcut" data-query='ip=""'>ip= IP地址</span>
+            <span class="ai-shortcut" data-query='domain=""'>domain= 域名</span>
+            <span class="ai-shortcut" data-query='port=""'>port= 端口</span>
+            <span class="ai-shortcut" data-query='body=""'>body= 内容</span>
+            <span class="ai-shortcut" data-query='server=""'>server= 服务</span>
+        </div>
+        <div class="ai-body" id="aiBody">
+            <div class="ai-message assistant">
+                <strong>欢迎使用资产测绘搜索</strong>
+                <br><br>在下方输入框中输入搜索语句即可搜索，语法格式如下：
+                <br><br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">title="关键词"</code> 搜索标题
+                <br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">ip="1.1.1.1"</code> 搜索IP
+                <br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">domain="example.com"</code> 搜索域名
+                <br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">port="80"</code> 搜索端口
+                <br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">body="admin"</code> 搜索页面内容
+                <br>
+                <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;display:inline-block;margin:2px 0;">server="nginx"</code> 搜索服务器类型
+                <br><br>
+                <strong>组合搜索：</strong>使用 <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">&amp;&amp;</code> 连接多个条件
+                <br>例如：<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">title="后台" &amp;&amp; port="443"</code>
+            </div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" data-query='title=""'>
+                    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                    标题搜索
+                </button>
+                <button class="tool-btn" data-query='ip=""'>
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    IP搜索
+                </button>
+                <button class="tool-btn" data-query='port=""'>
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+                    端口搜索
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea class="ai-input" id="aiInput" placeholder="输入搜索语句，如: title=&quot;后台&quot; 或 ip=&quot;1.1.1.1&quot;" rows="1"></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- FOFA API -->
+    <script src="../fofa-api.js"></script>
+    <!-- 页面脚本 -->
+    <script src="../static/js/aisearch.js"></script>
+</body>
+</html>

@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI红队助手 - XHSecTeam</title>
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        .main-layout {
+            margin-right: 0 !important;
+        }
+        .ai-assistant-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px 28px;
+            gap: 18px;
+        }
+        .ai-header-section {
+            text-align: center;
+        }
+        .ai-main-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+            letter-spacing: 0.03em;
+        }
+        .ai-sub-title {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            overflow: hidden;
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
+            position: relative;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+        .chat-container::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.18));
+            opacity: 0.7;
+            pointer-events: none;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            padding: 1px;
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 22px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scrollbar-width: none;
+            background:
+                radial-gradient(circle at 0 0, rgba(16, 185, 129, 0.06), transparent 55%),
+                radial-gradient(circle at 100% 0, rgba(6, 182, 212, 0.06), transparent 55%),
+                linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.96));
+        }
+        .chat-messages::-webkit-scrollbar {
+            display: none;
+        }
+        .message {
+            max-width: 640px;
+            animation: messageIn 0.24s ease-out;
+        }
+        .message.assistant {
+            align-self: flex-start;
+        }
+        .message.user {
+            align-self: flex-end;
+        }
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .message-content {
+            position: relative;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            word-break: break-word;
+        }
+        .message.assistant .message-content {
+            background: rgba(241, 245, 249, 0.95);
+            color: var(--text-primary);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+        }
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 10px 26px rgba(16, 185, 129, 0.35);
+        }
+        .message-time {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+        .message.user .message-time {
+            text-align: right;
+        }
+        .message-content pre {
+            margin: 8px 0 4px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #e5e7eb;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .message-content code {
+            padding: 2px 4px;
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.06);
+            font-size: 12px;
+        }
+        .message.assistant .message-content code {
+            background: rgba(15, 23, 42, 0.04);
+        }
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px 32px;
+        }
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            display: flex;
+            color: var(--accent-green);
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            background:
+                radial-gradient(circle at 0 0, rgba(16, 185, 129, 0.18), transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.18), transparent 60%),
+                rgba(248, 250, 252, 0.95);
+            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+        }
+        .welcome-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .welcome-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            max-width: 520px;
+            margin: 0 auto;
+        }
+        .tools-section {
+            padding: 14px 22px 22px;
+            border-top: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98));
+        }
+        .tools-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .tools-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .tool-tab {
+            padding: 7px 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.18s ease-out;
+        }
+        .tool-tab:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        .tool-tab.active {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 8px 22px rgba(16, 185, 129, 0.28);
+        }
+        .tools-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .tools-grid.active {
+            display: grid;
+        }
+        .tool-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 14px;
+            padding: 13px 12px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            overflow: hidden;
+        }
+        .tool-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(360px 80px at 20% 0%, rgba(16, 185, 129, 0.08), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.22s ease-out;
+            pointer-events: none;
+        }
+        .tool-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+        }
+        .tool-card:hover::before {
+            opacity: 1;
+        }
+        .tool-card.selected {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.04);
+        }
+        .tool-card.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 12px;
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+        .tool-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .tool-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+        .tab-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tab-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        .tool-icon.recon {
+            background: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
+        }
+        .tool-icon.vuln {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+        }
+        .tool-icon.web {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+        }
+        .tool-icon.network {
+            background: rgba(139, 92, 246, 0.12);
+            color: #8b5cf6;
+        }
+        .tool-icon.exploit {
+            background: rgba(236, 72, 153, 0.12);
+            color: #ec4899;
+        }
+        .tool-icon.post {
+            background: rgba(20, 184, 166, 0.12);
+            color: #14b8a6;
+        }
+        .tool-icon.cloud {
+            background: rgba(6, 182, 212, 0.12);
+            color: #06b6d4;
+        }
+        .tool-icon.ai {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+        }
+        .tool-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tool-desc {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .input-section {
+            padding: 14px 22px 18px;
+            border-top: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(255, 255, 255, 0.98);
+        }
+        .selected-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+            min-height: 28px;
+        }
+        .selected-tool-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+        .selected-tool-tag .remove {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.16s ease-out;
+        }
+        .selected-tool-tag .remove:hover {
+            opacity: 1;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .input-field {
+            flex: 1;
+            position: relative;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 14px;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            min-height: 52px;
+            max-height: 150px;
+            background: #ffffff;
+            font-family: inherit;
+            transition: border-color 0.16s ease-out, box-shadow 0.16s ease-out, background 0.16s ease-out;
+        }
+        .chat-input:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+            background: #ffffff;
+        }
+        .chat-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .send-btn {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            transition: transform 0.14s ease-out, box-shadow 0.14s ease-out, filter 0.14s ease-out;
+            flex-shrink: 0;
+        }
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 26px rgba(16, 185, 129, 0.4);
+            filter: brightness(1.03);
+        }
+        .send-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+        .send-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .quick-commands {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .quick-cmd {
+            padding: 5px 13px;
+            background: rgba(248, 250, 252, 0.98);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.16s ease-out;
+        }
+        .quick-cmd:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.04);
+        }
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 14px;
+            background: rgba(248, 250, 252, 0.98);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-tertiary);
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        .status-dot.offline {
+            background: var(--accent-red);
+            box-shadow: 0 0 6px rgba(248, 113, 113, 0.7);
+            animation: none;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(0.95);
+            }
+        }
+        .thinking-dots {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .dots-animation {
+            display: inline-block;
+            width: 16px;
+            text-align: left;
+            animation: dotsPulse 1s infinite ease-in-out;
+        }
+        @keyframes dotsPulse {
+            0%, 100% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        @media (max-width: 900px) {
+            .ai-assistant-container {
+                padding: 16px 12px 20px;
+            }
+            .chat-messages {
+                padding: 18px 16px;
+            }
+        }
+        @media (max-width: 768px) {
+            .ai-assistant-container {
+                padding: 14px 12px 18px;
+            }
+            .tools-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .message {
+                max-width: 92%;
+            }
+            .input-section {
+                padding: 12px 14px 14px;
+            }
+        }
+        @media (max-width: 480px) {
+            .ai-main-title {
+                font-size: 24px;
+            }
+            .chat-container {
+                border-radius: 16px;
+            }
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .input-wrapper {
+                align-items: stretch;
+            }
+            .send-btn {
+                width: 46px;
+                height: 46px;
+                border-radius: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧导航栏 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <!-- 主布局 -->
+    <div class="main-layout">
+                <div class="content">
+            <div class="ai-assistant-container">
+                <!-- 标题区 -->
+                <div class="ai-header-section">
+                    <h1 class="ai-main-title">
+                        <span class="tab-icon">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="5" y="5" width="14" height="14" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                                <path d="M9 10h6M9 14h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span>AI 红队助手</span>
+                    </h1>
+                    <p class="ai-sub-title">智能渗透测试 · 自动化攻击 · MCP工具集成</p>
+                </div>
+
+                <!-- 对话容器 -->
+                <div class="chat-container">
+                    <!-- 消息区域 -->
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="welcome-message">
+                            <div class="welcome-icon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 3.5l6 2.2v5.3c0 4.1-2.6 7.8-6 9-3.4-1.2-6-4.9-6-9V5.7l6-2.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                    <path d="M10 11.5l2 2 3-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <h2 class="welcome-title">欢迎使用 AI 红队助手</h2>
+                            <p class="welcome-desc">我可以帮助您进行渗透测试、漏洞扫描、信息收集等安全任务。选择下方的工具或直接输入您的需求开始吧。</p>
+                        </div>
+                    </div>
+
+                    <!-- 工具选择区 -->
+                    <div class="tools-section">
+                        <div class="tools-tabs">
+                            <div class="tool-tab active" data-category="ai">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="5" y="5" width="14" height="14" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 10h6M9 14h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span>AI智能</span>
+                            </div>
+                            <div class="tool-tab" data-category="recon">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M15 15l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span>信息收集</span>
+                            </div>
+                            <div class="tool-tab" data-category="vuln">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 4l8 14H4l8-14z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 10v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                        <circle cx="12" cy="16.5" r="0.9" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <span>漏洞扫描</span>
+                            </div>
+                            <div class="tool-tab" data-category="web">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M5 12h14M12 5c2 2 3 4.5 3 7s-1 5-3 7c-2-2-3-4.5-3-7s1-5 3-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span>Web攻击</span>
+                            </div>
+                            <div class="tool-tab" data-category="network">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span>网络攻击</span>
+                            </div>
+                            <div class="tool-tab" data-category="exploit">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M12 4v3.5M12 16.5V20M4 12h3.5M16.5 12H20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                        <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                <span>漏洞利用</span>
+                            </div>
+                            <div class="tool-tab" data-category="post">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7.5 8.5L12 6l4.5 2.5v7L12 18l-4.5-2.5v-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 6v12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span>后渗透</span>
+                            </div>
+                            <div class="tool-tab" data-category="cloud">
+                                <span class="tab-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8.5 18h7a3.5 3.5 0 0 0 .5-7 4 4 0 0 0-7.6-1.5A3 3 0 0 0 8.5 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                <span>云安全</span>
+                            </div>
+                        </div>
+
+                        <!-- AI智能工具 -->
+                        <div class="tools-grid active" data-category="ai">
+                            <div class="tool-card" data-tool="auto_recon">
+                                <div class="tool-icon ai">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="5" y="5" width="14" height="14" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 10h6M9 14h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">智能自动打点</div>
+                                <div class="tool-desc">AI驱动的全自动渗透测试</div>
+                            </div>
+                            <div class="tool-card" data-tool="smart_service_scan">
+                                <div class="tool-icon ai">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="5" y="5" width="14" height="14" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 10h6M9 14h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">智能服务分析</div>
+                                <div class="tool-desc">自动选择最佳扫描策略</div>
+                            </div>
+                            <div class="tool-card" data-tool="ai_attack_plan">
+                                <div class="tool-icon ai">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="5" y="5" width="14" height="14" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 10h6M9 14h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">AI攻击规划</div>
+                                <div class="tool-desc">生成智能攻击计划</div>
+                            </div>
+                        </div>
+
+                        <!-- 信息收集工具 -->
+                        <div class="tools-grid" data-category="recon">
+                            <div class="tool-card" data-tool="nmap_scan">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M15 15l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Nmap扫描</div>
+                                <div class="tool-desc">端口与服务发现</div>
+                            </div>
+                            <div class="tool-card" data-tool="subdomain_enum">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M5 12h14M12 5c2 2 3 4.5 3 7s-1 5-3 7c-2-2-3-4.5-3-7s1-5 3-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">子域名枚举</div>
+                                <div class="tool-desc">发现所有子域名</div>
+                            </div>
+                            <div class="tool-card" data-tool="dns_enum">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="7" y="5" width="10" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 9h6M9 12h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">DNS枚举</div>
+                                <div class="tool-desc">查询DNS记录</div>
+                            </div>
+                            <div class="tool-card" data-tool="whatweb">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M15 15l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">WhatWeb</div>
+                                <div class="tool-desc">识别Web技术栈</div>
+                            </div>
+                            <div class="tool-card" data-tool="wafw00f">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3.5l6 2.2v5.3c0 4.1-2.6 7.8-6 9-3.4-1.2-6-4.9-6-9V5.7l6-2.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">WAF检测</div>
+                                <div class="tool-desc">识别防火墙</div>
+                            </div>
+                            <div class="tool-card" data-tool="whois_lookup">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="7" y="5" width="10" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 9h6M9 12h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Whois查询</div>
+                                <div class="tool-desc">域名注册信息</div>
+                            </div>
+                            <div class="tool-card" data-tool="httpx_probe">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M5 12h14M12 5c2 2 3 4.5 3 7s-1 5-3 7c-2-2-3-4.5-3-7s1-5 3-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Httpx探测</div>
+                                <div class="tool-desc">HTTP服务探测</div>
+                            </div>
+                            <div class="tool-card" data-tool="google_dork">
+                                <div class="tool-icon recon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M15 15l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Google Dork</div>
+                                <div class="tool-desc">高级搜索语法</div>
+                            </div>
+                        </div>
+
+                        <!-- 漏洞扫描工具 -->
+                        <div class="tools-grid" data-category="vuln">
+                            <div class="tool-card" data-tool="vuln_scan">
+                                <div class="tool-icon vuln">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 4l8 14H4l8-14z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 10v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                        <circle cx="12" cy="16.5" r="0.9" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Nuclei扫描</div>
+                                <div class="tool-desc">快速漏洞检测</div>
+                            </div>
+                            <div class="tool-card" data-tool="nikto_scan">
+                                <div class="tool-icon vuln">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 4l8 14H4l8-14z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 10v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                        <circle cx="12" cy="16.5" r="0.9" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Nikto扫描</div>
+                                <div class="tool-desc">Web服务器漏洞</div>
+                            </div>
+                            <div class="tool-card" data-tool="sslscan">
+                                <div class="tool-icon vuln">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="6.5" y="10" width="11" height="8" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.5 10V8.5A2.5 2.5 0 0 1 12 6a2.5 2.5 0 0 1 2.5 2.5V10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SSL扫描</div>
+                                <div class="tool-desc">SSL/TLS配置检测</div>
+                            </div>
+                            <div class="tool-card" data-tool="searchsploit">
+                                <div class="tool-icon vuln">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7 6.5h8.5A2.5 2.5 0 0 1 18 9v8.5H9.5A2.5 2.5 0 0 1 7 15V6.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M7 9h11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Searchsploit</div>
+                                <div class="tool-desc">搜索Exploit-DB</div>
+                            </div>
+                            <div class="tool-card" data-tool="cve_search">
+                                <div class="tool-icon vuln">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="6" y="7" width="12" height="10" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 10h2M13 10h2M9 14h2M13 14h2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">CVE搜索</div>
+                                <div class="tool-desc">搜索CVE漏洞</div>
+                            </div>
+                        </div>
+
+                        <!-- Web攻击工具 -->
+                        <div class="tools-grid" data-category="web">
+                            <div class="tool-card" data-tool="sqli_test">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M5 12h14M12 5c2 2 3 4.5 3 7s-1 5-3 7c-2-2-3-4.5-3-7s1-5 3-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SQL注入测试</div>
+                                <div class="tool-desc">SQLMap自动化检测</div>
+                            </div>
+                            <div class="tool-card" data-tool="xss_scan">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M11 4L7 13h4v7l6-11h-4l2-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">XSS扫描</div>
+                                <div class="tool-desc">跨站脚本检测</div>
+                            </div>
+                            <div class="tool-card" data-tool="dir_scan">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M5 7.5h5l1.5 2.5H19v7H5v-10z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">目录扫描</div>
+                                <div class="tool-desc">发现隐藏目录</div>
+                            </div>
+                            <div class="tool-card" data-tool="gobuster">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7 17l2.5-5.5L12 7l4 4-4.5 2.5L7 17z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M7 17l2-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Gobuster</div>
+                                <div class="tool-desc">快速目录暴力</div>
+                            </div>
+                            <div class="tool-card" data-tool="ffuf">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M12 5v2.2M12 16.8V19M7 7l1.6 1.6M15.4 15.4L17 17M5 12h2.2M16.8 12H19M7 17l1.6-1.6M15.4 8.6L17 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Ffuf</div>
+                                <div class="tool-desc">Web Fuzzer</div>
+                            </div>
+                            <div class="tool-card" data-tool="sqli_payload">
+                                <div class="tool-icon web">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="7" y="5" width="10" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 9h6M9 12h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SQLi Payload</div>
+                                <div class="tool-desc">生成注入载荷</div>
+                            </div>
+                        </div>
+
+                        <!-- 网络攻击工具 -->
+                        <div class="tools-grid" data-category="network">
+                            <div class="tool-card" data-tool="brute_force">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">密码爆破</div>
+                                <div class="tool-desc">Hydra密码破解</div>
+                            </div>
+                            <div class="tool-card" data-tool="smb_enum">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SMB枚举</div>
+                                <div class="tool-desc">枚举共享和用户</div>
+                            </div>
+                            <div class="tool-card" data-tool="ssh_audit">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SSH审计</div>
+                                <div class="tool-desc">SSH安全审计</div>
+                            </div>
+                            <div class="tool-card" data-tool="crackmapexec">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">CrackMapExec</div>
+                                <div class="tool-desc">网络渗透利器</div>
+                            </div>
+                            <div class="tool-card" data-tool="snmp_walk">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">SNMP Walk</div>
+                                <div class="tool-desc">SNMP信息收集</div>
+                            </div>
+                            <div class="tool-card" data-tool="ldap_enum">
+                                <div class="tool-icon network">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="7" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="17" cy="8" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <circle cx="12" cy="16" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.3 9.5L10.7 14.5M14.7 9.5L13.3 14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">LDAP枚举</div>
+                                <div class="tool-desc">LDAP信息收集</div>
+                            </div>
+                        </div>
+
+                        <!-- 漏洞利用工具 -->
+                        <div class="tools-grid" data-category="exploit">
+                            <div class="tool-card" data-tool="msf_search">
+                                <div class="tool-icon exploit">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M12 4v3.5M12 16.5V20M4 12h3.5M16.5 12H20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                        <circle cx="12" cy="12" r="1.2" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Metasploit搜索</div>
+                                <div class="tool-desc">搜索利用模块</div>
+                            </div>
+                            <div class="tool-card" data-tool="msfvenom">
+                                <div class="tool-icon exploit">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M14.5 7.5l2-2M16 5.5h2.5M16.5 4v2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">MsfVenom</div>
+                                <div class="tool-desc">生成Payload</div>
+                            </div>
+                            <div class="tool-card" data-tool="reverse_shell">
+                                <div class="tool-icon exploit">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9.5 10.5c1 .5 2 .5 3.5-.3 1.2-.6 2.2-.5 2.5.8-.2 2.2-2 3.5-4 3.5-1.6 0-2.8-.8-3.5-2.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">反向Shell</div>
+                                <div class="tool-desc">生成各类Shell</div>
+                            </div>
+                        </div>
+
+                        <!-- 后渗透工具 -->
+                        <div class="tools-grid" data-category="post">
+                            <div class="tool-card" data-tool="linpeas">
+                                <div class="tool-icon post">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7.5 8.5L12 6l4.5 2.5v7L12 18l-4.5-2.5v-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 6v12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">LinPEAS</div>
+                                <div class="tool-desc">Linux提权枚举</div>
+                            </div>
+                            <div class="tool-card" data-tool="winpeas">
+                                <div class="tool-icon post">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M7.5 8.5L12 6l4.5 2.5v7L12 18l-4.5-2.5v-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M12 6v12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">WinPEAS</div>
+                                <div class="tool-desc">Windows提权枚举</div>
+                            </div>
+                            <div class="tool-card" data-tool="linux_exploit_suggester">
+                                <div class="tool-icon post">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="7" y="5" width="10" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                                        <path d="M9 9h6M9 12h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">内核漏洞建议</div>
+                                <div class="tool-desc">Linux内核提权</div>
+                            </div>
+                            <div class="tool-card" data-tool="linenum">
+                                <div class="tool-icon post">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <rect x="7.5" y="11" width="2" height="5" fill="currentColor"/>
+                                        <rect x="11" y="9" width="2" height="7" fill="currentColor"/>
+                                        <rect x="14.5" y="7.5" width="2" height="8.5" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">LinEnum</div>
+                                <div class="tool-desc">Linux枚举脚本</div>
+                            </div>
+                        </div>
+
+                        <!-- 云安全工具 -->
+                        <div class="tools-grid" data-category="cloud">
+                            <div class="tool-card" data-tool="aws_enum">
+                                <div class="tool-icon cloud">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8.5 18h7a3.5 3.5 0 0 0 .5-7 4 4 0 0 0-7.6-1.5A3 3 0 0 0 8.5 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">AWS枚举</div>
+                                <div class="tool-desc">枚举AWS资源</div>
+                            </div>
+                            <div class="tool-card" data-tool="s3_scanner">
+                                <div class="tool-icon cloud">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8.5 18h7a3.5 3.5 0 0 0 .5-7 4 4 0 0 0-7.6-1.5A3 3 0 0 0 8.5 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">S3扫描</div>
+                                <div class="tool-desc">扫描S3存储桶</div>
+                            </div>
+                            <div class="tool-card" data-tool="azure_enum">
+                                <div class="tool-icon cloud">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8.5 18h7a3.5 3.5 0 0 0 .5-7 4 4 0 0 0-7.6-1.5A3 3 0 0 0 8.5 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Azure枚举</div>
+                                <div class="tool-desc">枚举Azure资源</div>
+                            </div>
+                            <div class="tool-card" data-tool="kube_hunter">
+                                <div class="tool-icon cloud">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M8.5 18h7a3.5 3.5 0 0 0 .5-7 4 4 0 0 0-7.6-1.5A3 3 0 0 0 8.5 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <div class="tool-name">Kube-hunter</div>
+                                <div class="tool-desc">K8s安全扫描</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="input-section">
+                        <div class="status-bar">
+                            <div class="status-item">
+                                <span class="status-dot" id="serverStatus"></span>
+                                <span id="serverStatusText">MCP服务器: 检测中...</span>
+                            </div>
+                            <div class="status-item">
+                                已选工具: <strong id="selectedCount">0</strong> 个
+                            </div>
+                        </div>
+
+                        <div class="selected-tools" id="selectedTools"></div>
+
+                        <div class="input-wrapper">
+                            <div class="input-field">
+                                <textarea class="chat-input" id="chatInput" 
+                                    placeholder="输入目标地址或描述您的任务，例如：扫描 example.com 的所有开放端口..."
+                                    rows="1"></textarea>
+                            </div>
+                            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                                <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linejoin="round" stroke-linecap="round"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="quick-commands">
+                            <span class="quick-cmd" onclick="quickCommand('扫描目标所有端口')">快速端口扫描</span>
+                            <span class="quick-cmd" onclick="quickCommand('枚举子域名')">子域名枚举</span>
+                            <span class="quick-cmd" onclick="quickCommand('检测Web漏洞')">Web漏洞扫描</span>
+                            <span class="quick-cmd" onclick="quickCommand('全自动渗透测试')">自动化打点</span>
+                            <span class="quick-cmd" onclick="quickCommand('生成攻击计划')">生成攻击计划</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MCP服务器配置
+        const MCP_SERVER = 'http://127.0.0.1:5000';
+        
+        // 已选工具
+        let selectedTools = [];
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 加载导航栏
+            await XHLayout.loadNavbar({
+                activeTab: 'getshell',
+                basePath: '../'
+            });
+            
+            // 检查服务器状态
+            checkServerStatus();
+            
+            // 初始化事件
+            initEvents();
+        });
+
+        // 检查MCP服务器状态
+        async function checkServerStatus() {
+            const statusDot = document.getElementById('serverStatus');
+            const statusText = document.getElementById('serverStatusText');
+            
+            try {
+                const response = await fetch(`${MCP_SERVER}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (response.ok) {
+                    statusDot.classList.remove('offline');
+                    statusText.textContent = 'MCP服务器: 在线';
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (e) {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'MCP服务器: 离线';
+            }
+        }
+
+        // 初始化事件
+        function initEvents() {
+            // Tab切换
+            document.querySelectorAll('.tool-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const category = tab.dataset.category;
+                    
+                    // 切换tab状态
+                    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // 切换grid显示
+                    document.querySelectorAll('.tools-grid').forEach(grid => {
+                        grid.classList.remove('active');
+                        if (grid.dataset.category === category) {
+                            grid.classList.add('active');
+                        }
+                    });
+                });
+            });
+
+            // 工具卡片点击
+            document.querySelectorAll('.tool-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const tool = card.dataset.tool;
+                    toggleTool(tool, card);
+                });
+            });
+
+            // 输入框自动调整高度
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', () => {
+                chatInput.style.height = 'auto';
+                chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
+            });
+
+            // Enter发送
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        // 切换工具选择
+        function toggleTool(tool, card) {
+            const index = selectedTools.indexOf(tool);
+            if (index > -1) {
+                selectedTools.splice(index, 1);
+                card.classList.remove('selected');
+            } else {
+                selectedTools.push(tool);
+                card.classList.add('selected');
+            }
+            updateSelectedTools();
+        }
+
+        // 更新已选工具显示
+        function updateSelectedTools() {
+            const container = document.getElementById('selectedTools');
+            const countEl = document.getElementById('selectedCount');
+            
+            countEl.textContent = selectedTools.length;
+            
+            if (selectedTools.length === 0) {
+                container.innerHTML = '<span style="font-size: 12px; color: var(--text-tertiary);">点击上方工具卡片选择要使用的工具</span>';
+            } else {
+                container.innerHTML = selectedTools.map(tool => `
+                    <span class="selected-tool-tag">
+                        ${tool}
+                        <span class="remove" onclick="removeTool('${tool}')">×</span>
+                    </span>
+                `).join('');
+            }
+        }
+
+        // 移除工具
+        function removeTool(tool) {
+            const index = selectedTools.indexOf(tool);
+            if (index > -1) {
+                selectedTools.splice(index, 1);
+                document.querySelector(`.tool-card[data-tool="${tool}"]`)?.classList.remove('selected');
+                updateSelectedTools();
+            }
+        }
+
+        // 快捷指令
+        function quickCommand(cmd) {
+            document.getElementById('chatInput').value = cmd;
+            document.getElementById('chatInput').focus();
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 清空输入
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            
+            // 移除欢迎消息
+            const welcome = document.querySelector('.welcome-message');
+            if (welcome) welcome.remove();
+            
+            // 添加思考中消息
+            const thinkingId = addThinkingMessage();
+            
+            try {
+                // 构建请求
+                const payload = {
+                    message: message,
+                    tools: selectedTools,
+                    context: {}
+                };
+                
+                // 调用MCP服务器
+                const response = await fetch(`${MCP_SERVER}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                // 移除思考消息
+                removeThinkingMessage(thinkingId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addMessage(data.response || '任务已接收，正在处理...', 'assistant');
+                } else {
+                    addMessage('抱歉，服务器响应异常，请检查MCP服务器是否正常运行。', 'assistant');
+                }
+            } catch (e) {
+                removeThinkingMessage(thinkingId);
+                addMessage(`连接失败: ${e.message}。请确保MCP服务器已启动 (http://127.0.0.1:5000)`, 'assistant');
+            }
+        }
+
+        // 添加消息
+        function addMessage(content, type) {
+            const container = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            
+            const messageHtml = `
+                <div class="message ${type}">
+                    <div class="message-content">${formatMessage(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', messageHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 格式化消息（支持代码块等）
+        function formatMessage(content) {
+            // 简单的代码块支持
+            content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+            content = content.replace(/\n/g, '<br>');
+            return content;
+        }
+
+        // 添加思考中消息
+        function addThinkingMessage() {
+            const id = 'thinking-' + Date.now();
+            const container = document.getElementById('chatMessages');
+            
+            const html = `
+                <div class="message assistant" id="${id}">
+                    <div class="message-content" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="thinking-dots">思考中</span>
+                        <span class="dots-animation">...</span>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            container.scrollTop = container.scrollHeight;
+            
+            return id;
+        }
+
+        // 移除思考消息
+        function removeThinkingMessage(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // 初始化已选工具显示
+        updateSelectedTools();
+
+        // 定期检查服务器状态
+        setInterval(checkServerStatus, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-label="Shield lock animation">
+  <style>
+    :root{--c1:#10b981;--c2:#06b6d4;--c3:#94a3b8}
+    .bg{fill:rgba(15,23,42,.95)}
+    .stroke{fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .grid{stroke:rgba(148,163,184,.18);stroke-width:1}
+    .shield{stroke:url(#g1);stroke-width:10}
+    .lock{stroke:rgba(229,253,245,.9);stroke-width:10}
+    .core{fill:rgba(16,185,129,.18);stroke:rgba(16,185,129,.55);stroke-width:2}
+    .orbit{stroke:rgba(6,182,212,.55);stroke-width:2;stroke-dasharray:6 10}
+    .flow{stroke:rgba(16,185,129,.65);stroke-width:2;stroke-dasharray:140;stroke-dashoffset:140}
+    .spin{transform-origin:240px 180px;will-change:transform}
+    .pulse{transform-origin:240px 186px;will-change:transform}
+    .dash{will-change:stroke-dashoffset}
+    @media (prefers-reduced-motion: no-preference){
+      .spin{animation:spin 16s linear infinite}
+      .pulse{animation:pulse 2.6s ease-in-out infinite}
+      .orbit{animation:orbit 12s linear infinite}
+      .dash{animation:flow 3.8s ease-in-out infinite}
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}}
+    @keyframes orbit{to{stroke-dashoffset:-80}}
+    @keyframes flow{0%{stroke-dashoffset:140;opacity:0}35%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+  </style>
+  <defs>
+    <linearGradient id="g1" x1="120" y1="80" x2="360" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(240 190) rotate(90) scale(150 190)">
+      <stop stop-color="rgba(16,185,129,.25)"/>
+      <stop offset="1" stop-color="rgba(16,185,129,0)"/>
+    </radialGradient>
+  </defs>
+  <rect class="bg" x="24" y="24" width="432" height="312" rx="26"/>
+  <rect x="24" y="24" width="432" height="312" rx="26" fill="url(#glow)"/>
+  <g opacity=".7">
+    <path class="stroke grid" d="M72 72H408"/>
+    <path class="stroke grid" d="M72 120H408"/>
+    <path class="stroke grid" d="M72 168H408"/>
+    <path class="stroke grid" d="M72 216H408"/>
+    <path class="stroke grid" d="M72 264H408"/>
+    <path class="stroke grid" d="M120 72V288"/>
+    <path class="stroke grid" d="M180 72V288"/>
+    <path class="stroke grid" d="M240 72V288"/>
+    <path class="stroke grid" d="M300 72V288"/>
+    <path class="stroke grid" d="M360 72V288"/>
+  </g>
+  <g class="spin">
+    <circle class="stroke orbit" cx="240" cy="180" r="118"/>
+    <circle class="stroke orbit" cx="240" cy="180" r="92" opacity=".55"/>
+  </g>
+  <path class="stroke shield" d="M240 78l112 42v84c0 86-112 124-112 124S128 290 128 204v-84l112-42z"/>
+  <g class="pulse">
+    <rect class="stroke lock" x="192" y="176" width="96" height="84" rx="16"/>
+    <path class="stroke lock" d="M210 176v-18c0-20 14-34 30-34s30 14 30 34v18"/>
+    <circle class="core" cx="240" cy="216" r="18"/>
+  </g>
+  <g class="dash" opacity=".9">
+    <path class="stroke flow" d="M146 264C176 230 204 214 240 214c40 0 64 28 94 62"/>
+    <path class="stroke flow" d="M160 120c30 18 48 30 80 30s58-18 86-34" opacity=".65"/>
+  </g>
+</svg>
+

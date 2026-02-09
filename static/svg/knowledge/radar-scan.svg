@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220" role="img" aria-label="Radar scan animation">
+  <defs>
+    <radialGradient id="kbRadarGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="rgba(16,185,129,.22)"/>
+      <stop offset="100%" stop-color="rgba(16,185,129,0)"/>
+    </radialGradient>
+    <style>
+      .bg{fill:rgba(255,255,255,.0)}
+      .ring{fill:none;stroke:rgba(148,163,184,.25);stroke-width:1.2}
+      .cross{stroke:rgba(148,163,184,.22);stroke-width:1.2}
+      .beam{fill:url(#kbRadarGlow);transform-origin:160px 110px;will-change:transform;opacity:.9}
+      .dot{fill:#10b981;opacity:.85}
+      .pulse{transform-origin:var(--cx) var(--cy);will-change:transform}
+      @media (prefers-reduced-motion: no-preference){
+        .beam{animation:kbSweep 3.8s linear infinite}
+        .pulse{animation:kbPing 1.9s ease-in-out infinite}
+      }
+      @keyframes kbSweep{to{transform:rotate(360deg)}}
+      @keyframes kbPing{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.7);opacity:.15}}
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="320" height="220"/>
+  <g>
+    <circle class="ring" cx="160" cy="110" r="82"/>
+    <circle class="ring" cx="160" cy="110" r="58"/>
+    <circle class="ring" cx="160" cy="110" r="34"/>
+    <line class="cross" x1="78" y1="110" x2="242" y2="110"/>
+    <line class="cross" x1="160" y1="28" x2="160" y2="192"/>
+  </g>
+  <g>
+    <path class="beam" d="M160 110 L160 20 A90 90 0 0 1 250 110 Z"/>
+  </g>
+  <g>
+    <circle class="dot" cx="206" cy="76" r="3"/>
+    <circle class="dot pulse" style="--cx:206px;--cy:76px" cx="206" cy="76" r="4"/>
+    <circle class="dot" cx="118" cy="146" r="3" opacity=".65"/>
+    <circle class="dot pulse" style="--cx:118px;--cy:146px;animation-delay:.4s" cx="118" cy="146" r="4" opacity=".65"/>
+    <circle class="dot" cx="186" cy="152" r="2.6" opacity=".75"/>
+    <circle class="dot pulse" style="--cx:186px;--cy:152px;animation-delay:.8s" cx="186" cy="152" r="4" opacity=".75"/>
+  </g>
+</svg>
+

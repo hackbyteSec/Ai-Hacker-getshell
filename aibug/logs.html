@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>扫描日志 - XHSecTeam</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        /* 日志页面特有样式 */
+        .logs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            margin-top: 4px;
+        }
+        .logs-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-left: 6px;
+        }
+        .logs-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logs-title-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .logs-subtitle {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* 统计卡片 */
+        .logs-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .logs-stat-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+        }
+        .logs-stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+        .logs-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .logs-stat-card.total .logs-stat-value { color: #0f172a; }
+        .logs-stat-card.batch .logs-stat-value { color: #2563eb; }
+        .logs-stat-card.single .logs-stat-value { color: #10b981; }
+        .logs-stat-card.error .logs-stat-value { color: #ef4444; }
+
+        /* 筛选栏 */
+        .logs-filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .logs-filter-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logs-filter-tab {
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(248, 250, 252, 0.8);
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logs-filter-tab:hover {
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+        .logs-filter-tab.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+        .logs-filter-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logs-search-box {
+            display: flex;
+            align-items: center;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 999px;
+            padding: 0 4px 0 14px;
+            width: 240px;
+            transition: all 0.2s;
+        }
+        .logs-search-box:focus-within {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+        .logs-search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .logs-search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        .logs-search-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--accent-green);
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .logs-search-btn:hover {
+            background: #059669;
+        }
+        .logs-search-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .logs-action-btn {
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logs-action-btn:hover {
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        /* 日志列表容器 */
+        .logs-container {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+        }
+        .logs-table-header {
+            display: grid;
+            grid-template-columns: 60px 140px 1fr 120px 100px 100px;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.65));
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .logs-list {
+            overflow: visible;
+        }
+        .log-row {
+            display: grid;
+            grid-template-columns: 60px 140px 1fr 120px 100px 100px;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+            cursor: pointer;
+            transition: background 0.15s;
+            align-items: center;
+        }
+        .log-row:hover {
+            background: rgba(248, 250, 252, 0.8);
+        }
+        .log-row:last-child {
+            border-bottom: none;
+        }
+        .log-id {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+        }
+        .log-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .log-target {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .log-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .log-type-badge.batch {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+        .log-type-badge.single {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .log-type-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+        }
+        .log-type-badge.batch .log-type-dot { background: #2563eb; }
+        .log-type-badge.single .log-type-dot { background: #10b981; }
+        .log-status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+        .log-status-badge.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #15803d;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .log-status-badge.running {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .log-status-badge.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .log-vuln-count {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .log-vuln-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+        }
+        .log-vuln-dot.high { background: #ef4444; }
+        .log-vuln-dot.medium { background: #f59e0b; }
+        .log-vuln-dot.info { background: #94a3b8; }
+
+        /* 分页 */
+        .logs-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 18px;
+            border-top: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(248, 250, 252, 0.5);
+        }
+        .logs-page-btn {
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logs-page-btn:hover:not(:disabled) {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        .logs-page-btn.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+        .logs-page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .logs-page-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .logs-page-info {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            padding: 0 12px;
+        }
+
+        /* 日志详情面板 */
+        .log-detail-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 380px;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .log-detail-panel.active {
+            display: flex;
+        }
+        .log-detail-card {
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.65));
+        }
+        .log-detail-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .log-detail-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(148, 163, 184, 0.15);
+            border-radius: 999px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .log-detail-close:hover {
+            background: rgba(148, 163, 184, 0.25);
+            color: #0f172a;
+        }
+        .log-detail-close svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .log-detail-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .log-detail-section {
+            margin-bottom: 20px;
+        }
+        .log-detail-section:last-child {
+            margin-bottom: 0;
+        }
+        .log-detail-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .log-detail-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .log-detail-info-item {
+            padding: 12px 14px;
+            background: rgba(248, 250, 252, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 12px;
+        }
+        .log-detail-info-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+        .log-detail-info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .log-detail-vuln-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .log-detail-vuln-item {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .log-detail-vuln-severity {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        .log-detail-vuln-severity.high { background: #ef4444; }
+        .log-detail-vuln-severity.medium { background: #f59e0b; }
+        .log-detail-vuln-severity.info { background: #94a3b8; }
+        .log-detail-vuln-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .log-detail-vuln-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .log-detail-vuln-path {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+        }
+
+        @media (max-width: 900px) {
+            .logs-stats { grid-template-columns: repeat(2, 1fr); }
+            .logs-table-header,
+            .log-row { grid-template-columns: 50px 1fr 100px 80px; }
+            .logs-table-header > :nth-child(2),
+            .log-row > :nth-child(2),
+            .logs-table-header > :nth-child(6),
+            .log-row > :nth-child(6) { display: none; }
+        }
+        @media (max-width: 600px) {
+            .logs-stats { grid-template-columns: 1fr; }
+            .logs-filter-bar { flex-direction: column; align-items: flex-start; }
+            .logs-search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏占位符 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <div class="main-layout">
+        <main class="content">
+            <!-- 浮动导航占位符 -->
+            <div class="floating-nav" id="floatingNav"></div>
+
+            <!-- 页面头部 -->
+            <div class="logs-header">
+                <div class="logs-header-left">
+                    <div class="logs-title">
+                        扫描日志
+                        <span class="logs-title-badge">SCAN LOGS</span>
+                    </div>
+                    <div class="logs-subtitle">统计批量扫描、单站扫描的历史记录与漏洞发现情况</div>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="logs-stats">
+                <div class="logs-stat-card total">
+                    <div class="logs-stat-value" id="statTotal">50</div>
+                    <div class="logs-stat-label">总扫描次数</div>
+                </div>
+                <div class="logs-stat-card batch">
+                    <div class="logs-stat-value" id="statBatch">22</div>
+                    <div class="logs-stat-label">批量扫描</div>
+                </div>
+                <div class="logs-stat-card single">
+                    <div class="logs-stat-value" id="statSingle">28</div>
+                    <div class="logs-stat-label">单站扫描</div>
+                </div>
+                <div class="logs-stat-card error">
+                    <div class="logs-stat-value" id="statError">6</div>
+                    <div class="logs-stat-label">异常任务</div>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="logs-filter-bar">
+                <div class="logs-filter-left">
+                    <button class="logs-filter-tab active" data-filter="all" onclick="filterLogs('all')">全部</button>
+                    <button class="logs-filter-tab" data-filter="batch" onclick="filterLogs('batch')">批量扫描</button>
+                    <button class="logs-filter-tab" data-filter="single" onclick="filterLogs('single')">单站扫描</button>
+                    <button class="logs-filter-tab" data-filter="error" onclick="filterLogs('error')">异常</button>
+                </div>
+                <div class="logs-filter-right">
+                    <div class="logs-search-box">
+                        <input type="text" id="logsSearchInput" class="logs-search-input" placeholder="搜索目标URL..." onkeypress="if(event.key==='Enter')searchLogs()">
+                        <button class="logs-search-btn" onclick="searchLogs()">
+                            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        </button>
+                    </div>
+                    <button class="logs-action-btn" onclick="exportLogs()">导出日志</button>
+                    <button class="logs-action-btn" onclick="clearLogs()">清空</button>
+                </div>
+            </div>
+
+            <!-- 日志列表 -->
+            <div class="logs-container">
+                <div class="logs-table-header">
+                    <div>ID</div>
+                    <div>时间</div>
+                    <div>目标</div>
+                    <div>类型</div>
+                    <div>状态</div>
+                    <div>漏洞</div>
+                </div>
+                <div class="logs-list" id="logsList"></div>
+                <div class="logs-pagination" id="logsPagination"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 日志详情面板 -->
+    <div class="log-detail-panel" id="logDetailPanel" onclick="if(event.target===this)closeLogDetail()">
+        <div class="log-detail-card">
+            <div class="log-detail-header">
+                <div class="log-detail-title" id="logDetailTitle">扫描详情</div>
+                <button class="log-detail-close" onclick="closeLogDetail()">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="log-detail-body" id="logDetailBody"></div>
+        </div>
+    </div>
+
+    <!-- AI 安全助手面板 -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <div class="ai-title">AI 安全助手</div>
+        </div>
+        <div class="ai-shortcuts">
+            <button class="ai-shortcut" onclick="aiQuick('summary')">今日扫描摘要</button>
+            <button class="ai-shortcut" onclick="aiQuick('trend')">漏洞趋势分析</button>
+            <button class="ai-shortcut" onclick="aiQuick('risk')">高危目标预警</button>
+        </div>
+        <div class="ai-body" id="aiMessages">
+            <div class="ai-message assistant">
+                你好，这里是扫描日志的 AI 安全助手。<br>
+                我可以帮你：<br>
+                • 分析扫描日志的趋势和规律<br>
+                • 识别高风险目标和重复漏洞<br>
+                • 生成安全报告摘要<br>
+                • 提供针对性的安全建议
+            </div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" onclick="location.href='index.html'">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>批量扫描</span>
+                </button>
+                <button class="tool-btn" onclick="location.href='single.html'">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span>单站扫描</span>
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea id="aiInput" class="ai-input" rows="1" placeholder="询问关于扫描日志的问题..."></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 演示日志数据（50条）
+        const logsData = [
+            { id: 1, time: '2024-12-24 20:45:32', target: 'https://example.com', type: 'single', status: 'success', vulns: { high: 2, medium: 3, info: 4 } },
+            { id: 2, time: '2024-12-24 20:30:15', target: 'https://api.example.com', type: 'single', status: 'success', vulns: { high: 1, medium: 2, info: 1 } },
+            { id: 3, time: '2024-12-24 20:15:08', target: '批量扫描 - 苹果CMS站点 (25个)', type: 'batch', status: 'success', vulns: { high: 8, medium: 15, info: 22 } },
+            { id: 4, time: '2024-12-24 19:55:42', target: 'https://admin.target.cn', type: 'single', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 5, time: '2024-12-24 19:30:20', target: '批量扫描 - ThinkPHP站点 (18个)', type: 'batch', status: 'success', vulns: { high: 5, medium: 12, info: 8 } },
+            { id: 6, time: '2024-12-24 18:45:11', target: 'https://shop.demo.com', type: 'single', status: 'success', vulns: { high: 0, medium: 1, info: 3 } },
+            { id: 7, time: '2024-12-24 18:20:05', target: '批量扫描 - WordPress站点 (32个)', type: 'batch', status: 'running', vulns: { high: 3, medium: 7, info: 11 } },
+            { id: 8, time: '2024-12-24 17:50:33', target: 'https://blog.test.org', type: 'single', status: 'success', vulns: { high: 1, medium: 0, info: 2 } },
+            { id: 9, time: '2024-12-24 17:15:28', target: '批量扫描 - Drupal站点 (12个)', type: 'batch', status: 'success', vulns: { high: 2, medium: 5, info: 9 } },
+            { id: 10, time: '2024-12-24 16:40:19', target: 'https://portal.company.net', type: 'single', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 11, time: '2024-12-24 16:10:44', target: 'https://forum.example.org', type: 'single', status: 'success', vulns: { high: 0, medium: 2, info: 5 } },
+            { id: 12, time: '2024-12-24 15:35:22', target: '批量扫描 - Laravel站点 (20个)', type: 'batch', status: 'success', vulns: { high: 4, medium: 8, info: 15 } },
+            { id: 13, time: '2024-12-24 15:00:18', target: 'https://wiki.internal.io', type: 'single', status: 'success', vulns: { high: 1, medium: 3, info: 2 } },
+            { id: 14, time: '2024-12-24 14:25:09', target: '批量扫描 - Spring Boot应用 (15个)', type: 'batch', status: 'success', vulns: { high: 6, medium: 10, info: 7 } },
+            { id: 15, time: '2024-12-24 13:50:55', target: 'https://crm.business.com', type: 'single', status: 'success', vulns: { high: 2, medium: 4, info: 6 } },
+            { id: 16, time: '2024-12-24 13:15:41', target: '批量扫描 - Node.js应用 (22个)', type: 'batch', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 17, time: '2024-12-24 12:40:33', target: 'https://app.startup.io', type: 'single', status: 'success', vulns: { high: 0, medium: 1, info: 4 } },
+            { id: 18, time: '2024-12-24 12:05:27', target: 'https://dashboard.saas.co', type: 'single', status: 'success', vulns: { high: 1, medium: 2, info: 3 } },
+            { id: 19, time: '2024-12-24 11:30:14', target: '批量扫描 - Django应用 (8个)', type: 'batch', status: 'success', vulns: { high: 1, medium: 3, info: 5 } },
+            { id: 20, time: '2024-12-24 10:55:08', target: 'https://legacy.oldsite.net', type: 'single', status: 'success', vulns: { high: 3, medium: 5, info: 8 } },
+            { id: 21, time: '2024-12-24 10:20:45', target: 'https://payment.gateway.com', type: 'single', status: 'success', vulns: { high: 4, medium: 2, info: 1 } },
+            { id: 22, time: '2024-12-24 09:45:33', target: '批量扫描 - Struts2站点 (14个)', type: 'batch', status: 'success', vulns: { high: 7, medium: 9, info: 6 } },
+            { id: 23, time: '2024-12-24 09:10:22', target: 'https://mail.corporate.cn', type: 'single', status: 'success', vulns: { high: 1, medium: 1, info: 2 } },
+            { id: 24, time: '2024-12-24 08:35:11', target: '批量扫描 - Fastjson应用 (28个)', type: 'batch', status: 'success', vulns: { high: 12, medium: 8, info: 5 } },
+            { id: 25, time: '2024-12-24 08:00:00', target: 'https://oa.enterprise.net', type: 'single', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 26, time: '2024-12-23 23:45:18', target: 'https://cdn.static.io', type: 'single', status: 'success', vulns: { high: 0, medium: 0, info: 3 } },
+            { id: 27, time: '2024-12-23 23:10:05', target: '批量扫描 - Shiro框架 (16个)', type: 'batch', status: 'success', vulns: { high: 9, medium: 11, info: 7 } },
+            { id: 28, time: '2024-12-23 22:35:44', target: 'https://erp.factory.com', type: 'single', status: 'success', vulns: { high: 2, medium: 5, info: 4 } },
+            { id: 29, time: '2024-12-23 22:00:33', target: '批量扫描 - Log4j漏洞检测 (45个)', type: 'batch', status: 'success', vulns: { high: 18, medium: 12, info: 9 } },
+            { id: 30, time: '2024-12-23 21:25:22', target: 'https://vpn.secure.org', type: 'single', status: 'success', vulns: { high: 1, medium: 2, info: 1 } },
+            { id: 31, time: '2024-12-23 20:50:11', target: 'https://git.codebase.dev', type: 'single', status: 'success', vulns: { high: 0, medium: 3, info: 6 } },
+            { id: 32, time: '2024-12-23 20:15:00', target: '批量扫描 - Weblogic站点 (11个)', type: 'batch', status: 'success', vulns: { high: 5, medium: 7, info: 4 } },
+            { id: 33, time: '2024-12-23 19:40:48', target: 'https://jenkins.build.io', type: 'single', status: 'success', vulns: { high: 3, medium: 4, info: 2 } },
+            { id: 34, time: '2024-12-23 19:05:37', target: '批量扫描 - Redis未授权 (35个)', type: 'batch', status: 'success', vulns: { high: 14, medium: 6, info: 8 } },
+            { id: 35, time: '2024-12-23 18:30:26', target: 'https://nexus.repo.com', type: 'single', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 36, time: '2024-12-23 17:55:15', target: 'https://sonar.quality.net', type: 'single', status: 'success', vulns: { high: 0, medium: 1, info: 4 } },
+            { id: 37, time: '2024-12-23 17:20:04', target: '批量扫描 - MongoDB未授权 (19个)', type: 'batch', status: 'success', vulns: { high: 8, medium: 5, info: 3 } },
+            { id: 38, time: '2024-12-23 16:45:53', target: 'https://grafana.monitor.io', type: 'single', status: 'success', vulns: { high: 2, medium: 3, info: 5 } },
+            { id: 39, time: '2024-12-23 16:10:42', target: '批量扫描 - Elasticsearch (24个)', type: 'batch', status: 'success', vulns: { high: 6, medium: 9, info: 11 } },
+            { id: 40, time: '2024-12-23 15:35:31', target: 'https://zabbix.infra.cn', type: 'single', status: 'success', vulns: { high: 1, medium: 2, info: 3 } },
+            { id: 41, time: '2024-12-23 15:00:20', target: 'https://harbor.registry.com', type: 'single', status: 'success', vulns: { high: 0, medium: 1, info: 2 } },
+            { id: 42, time: '2024-12-23 14:25:09', target: '批量扫描 - Nacos配置中心 (13个)', type: 'batch', status: 'success', vulns: { high: 4, medium: 6, info: 5 } },
+            { id: 43, time: '2024-12-23 13:50:58', target: 'https://k8s.cluster.io', type: 'single', status: 'error', vulns: { high: 0, medium: 0, info: 0 } },
+            { id: 44, time: '2024-12-23 13:15:47', target: 'https://minio.storage.net', type: 'single', status: 'success', vulns: { high: 1, medium: 0, info: 3 } },
+            { id: 45, time: '2024-12-23 12:40:36', target: '批量扫描 - RocketMQ (9个)', type: 'batch', status: 'success', vulns: { high: 3, medium: 4, info: 2 } },
+            { id: 46, time: '2024-12-23 12:05:25', target: 'https://kafka.stream.com', type: 'single', status: 'success', vulns: { high: 0, medium: 2, info: 4 } },
+            { id: 47, time: '2024-12-23 11:30:14', target: '批量扫描 - ActiveMQ (17个)', type: 'batch', status: 'success', vulns: { high: 7, medium: 8, info: 6 } },
+            { id: 48, time: '2024-12-23 10:55:03', target: 'https://rabbitmq.queue.io', type: 'single', status: 'success', vulns: { high: 1, medium: 1, info: 2 } },
+            { id: 49, time: '2024-12-23 10:20:52', target: 'https://consul.service.net', type: 'single', status: 'success', vulns: { high: 0, medium: 3, info: 5 } },
+            { id: 50, time: '2024-12-23 09:45:41', target: '批量扫描 - Dubbo服务 (21个)', type: 'batch', status: 'success', vulns: { high: 5, medium: 7, info: 9 } }
+        ];
+
+        let currentFilter = 'all';
+        let currentPage = 1;
+        let currentKeyword = '';
+        const pageSize = 10;
+
+        function getFilteredData() {
+            let filtered = logsData;
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'error') {
+                    filtered = filtered.filter(l => l.status === 'error');
+                } else {
+                    filtered = filtered.filter(l => l.type === currentFilter);
+                }
+            }
+            if (currentKeyword) {
+                const kw = currentKeyword.toLowerCase();
+                filtered = filtered.filter(l => l.target.toLowerCase().includes(kw));
+            }
+            return filtered;
+        }
+
+        function renderLogsList() {
+            const list = document.getElementById('logsList');
+            const filtered = getFilteredData();
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filtered.slice(start, end);
+
+            list.innerHTML = pageData.map(log => {
+                const totalVulns = log.vulns.high + log.vulns.medium + log.vulns.info;
+                return `
+                    <div class="log-row" onclick="showLogDetail(${log.id})">
+                        <div class="log-id">#${log.id}</div>
+                        <div class="log-time">${log.time}</div>
+                        <div class="log-target">${escapeHtml(log.target)}</div>
+                        <div>
+                            <span class="log-type-badge ${log.type}">
+                                <span class="log-type-dot"></span>
+                                ${log.type === 'batch' ? '批量' : '单站'}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="log-status-badge ${log.status}">
+                                ${log.status === 'success' ? '完成' : log.status === 'running' ? '进行中' : '异常'}
+                            </span>
+                        </div>
+                        <div class="log-vuln-count">
+                            ${log.vulns.high > 0 ? `<span class="log-vuln-dot high"></span>${log.vulns.high}` : ''}
+                            ${log.vulns.medium > 0 ? `<span class="log-vuln-dot medium"></span>${log.vulns.medium}` : ''}
+                            ${log.vulns.info > 0 ? `<span class="log-vuln-dot info"></span>${log.vulns.info}` : ''}
+                            ${totalVulns === 0 ? '<span style="color:#94a3b8">-</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-tertiary)">未找到匹配的日志记录</div>';
+            }
+
+            renderPagination(filtered.length, totalPages);
+        }
+
+        function renderPagination(total, totalPages) {
+            const pagination = document.getElementById('logsPagination');
+            if (totalPages <= 1) {
+                pagination.innerHTML = `<span class="logs-page-info">共 ${total} 条记录</span>`;
+                return;
+            }
+
+            let html = '';
+            html += `<button class="logs-page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="logs-page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            html += `<button class="logs-page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>`;
+            html += `<span class="logs-page-info">共 ${total} 条</span>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            const filtered = getFilteredData();
+            const totalPages = Math.ceil(filtered.length / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderLogsList();
+        }
+
+        function filterLogs(filter) {
+            currentFilter = filter;
+            currentPage = 1;
+            document.querySelectorAll('.logs-filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === filter);
+            });
+            renderLogsList();
+        }
+
+        function searchLogs() {
+            currentKeyword = document.getElementById('logsSearchInput').value.trim();
+            currentPage = 1;
+            renderLogsList();
+        }
+
+        function showLogDetail(id) {
+            const log = logsData.find(l => l.id === id);
+            if (!log) return;
+
+            document.getElementById('logDetailTitle').textContent = `扫描详情 #${log.id}`;
+            
+            const totalVulns = log.vulns.high + log.vulns.medium + log.vulns.info;
+            const body = document.getElementById('logDetailBody');
+            body.innerHTML = `
+                <div class="log-detail-section">
+                    <div class="log-detail-section-title">基本信息</div>
+                    <div class="log-detail-info-grid">
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">扫描时间</div>
+                            <div class="log-detail-info-value">${log.time}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">扫描类型</div>
+                            <div class="log-detail-info-value">${log.type === 'batch' ? '批量扫描' : '单站扫描'}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">目标</div>
+                            <div class="log-detail-info-value">${log.target}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">状态</div>
+                            <div class="log-detail-info-value">${log.status === 'success' ? '扫描完成' : log.status === 'running' ? '进行中' : '异常终止'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-detail-section">
+                    <div class="log-detail-section-title">漏洞统计</div>
+                    <div class="log-detail-info-grid">
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">高危漏洞</div>
+                            <div class="log-detail-info-value" style="color:#ef4444">${log.vulns.high}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">中危漏洞</div>
+                            <div class="log-detail-info-value" style="color:#f59e0b">${log.vulns.medium}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">信息类</div>
+                            <div class="log-detail-info-value" style="color:#94a3b8">${log.vulns.info}</div>
+                        </div>
+                        <div class="log-detail-info-item">
+                            <div class="log-detail-info-label">总计</div>
+                            <div class="log-detail-info-value">${totalVulns}</div>
+                        </div>
+                    </div>
+                </div>
+                ${totalVulns > 0 ? `
+                <div class="log-detail-section">
+                    <div class="log-detail-section-title">漏洞详情</div>
+                    <div class="log-detail-vuln-list">
+                        ${log.vulns.high > 0 ? `
+                        <div class="log-detail-vuln-item">
+                            <span class="log-detail-vuln-severity high"></span>
+                            <div class="log-detail-vuln-content">
+                                <div class="log-detail-vuln-name">SQL注入漏洞</div>
+                                <div class="log-detail-vuln-path">/api/user?id=1</div>
+                            </div>
+                        </div>` : ''}
+                        ${log.vulns.medium > 0 ? `
+                        <div class="log-detail-vuln-item">
+                            <span class="log-detail-vuln-severity medium"></span>
+                            <div class="log-detail-vuln-content">
+                                <div class="log-detail-vuln-name">XSS跨站脚本</div>
+                                <div class="log-detail-vuln-path">/search?q=test</div>
+                            </div>
+                        </div>` : ''}
+                        ${log.vulns.info > 0 ? `
+                        <div class="log-detail-vuln-item">
+                            <span class="log-detail-vuln-severity info"></span>
+                            <div class="log-detail-vuln-content">
+                                <div class="log-detail-vuln-name">目录遍历</div>
+                                <div class="log-detail-vuln-path">/static/</div>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('logDetailPanel').classList.add('active');
+        }
+
+        function closeLogDetail() {
+            document.getElementById('logDetailPanel').classList.remove('active');
+        }
+
+        function exportLogs() {
+            alert('导出功能开发中...');
+        }
+
+        function clearLogs() {
+            if (confirm('确定要清空所有日志记录吗？')) {
+                alert('清空功能开发中...');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function aiQuick(type) {
+            const messagesDiv = document.getElementById('aiMessages');
+            const msg = document.createElement('div');
+            msg.className = 'ai-message assistant';
+            if (type === 'summary') {
+                msg.innerHTML = '<strong>今日扫描摘要</strong><br><br>今日共完成 20 次扫描任务：<br>• 批量扫描 8 次，覆盖 152 个目标<br>• 单站扫描 12 次<br>• 发现高危漏洞 18 个，中危 42 个<br>• 异常任务 3 个（已标记）';
+            } else if (type === 'trend') {
+                msg.innerHTML = '<strong>漏洞趋势分析</strong><br><br>近7天漏洞发现趋势：<br>• SQL注入类漏洞占比最高 (35%)<br>• XSS漏洞有上升趋势<br>• ThinkPHP框架目标漏洞检出率最高<br><br>建议重点关注 RCE 类高危漏洞。';
+            } else if (type === 'risk') {
+                msg.innerHTML = '<strong>高危目标预警</strong><br><br>以下目标存在多个高危漏洞，建议优先处理：<br>• https://example.com (2个高危)<br>• https://legacy.oldsite.net (3个高危)<br>• 批量扫描中的 ThinkPHP 站点群';
+            }
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const messagesDiv = document.getElementById('aiMessages');
+            const user = document.createElement('div');
+            user.className = 'ai-message user';
+            user.textContent = text;
+            messagesDiv.appendChild(user);
+
+            const ai = document.createElement('div');
+            ai.className = 'ai-message assistant';
+            ai.textContent = '我已收到你的问题，正在分析扫描日志数据...';
+            messagesDiv.appendChild(ai);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            input.value = '';
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await XHLayout.loadNavbar({
+                activeTab: 'logs',
+                basePath: '../'
+            });
+            
+            await XHLayout.loadFloatingNav({
+                title: '扫描日志',
+                activePage: 'logs',
+                basePath: '../'
+            });
+            
+            // 加载底部版权
+            XHLayout.loadFooter();
+            
+            renderLogsList();
+        });
+    </script>
+</body>
+</html>

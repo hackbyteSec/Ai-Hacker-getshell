@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL注入攻击完全指南：从入门到精通 - XHSecTeam安全知识库</title>
+    <meta name="description" content="深入讲解SQL注入的原理、分类、检测方法和防御措施。涵盖联合查询注入、布尔盲注、时间盲注、报错注入等多种技术，配合实战案例分析。">
+    <meta name="keywords" content="SQL注入,SQL Injection,Web安全,渗透测试,OWASP,数据库安全,联合查询注入,盲注">
+    <meta name="author" content="XHSecTeam">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://xhsecteam.com/knowledge/articles/sql-injection-guide.html">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="SQL注入攻击完全指南：从入门到精通">
+    <meta property="og:description" content="深入讲解SQL注入的原理、分类、检测方法和防御措施">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://xhsecteam.com/knowledge/articles/sql-injection-guide.html">
+    <meta property="article:published_time" content="2024-12-20">
+    <meta property="article:section" content="Web安全">
+    <meta property="article:tag" content="SQL注入">
+    
+    <link rel="stylesheet" href="../../static/css/common.css">
+    <script src="../../static/css/common.js"></script>
+    <script src="../../static/js/layout.js"></script>
+    <style>
+        .article-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 32px 60px;
+        }
+        .article-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 40px;
+        }
+        
+        /* 文章头部 */
+        .article-header {
+            margin-bottom: 32px;
+        }
+        .article-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+        .article-breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .article-breadcrumb a:hover {
+            color: var(--accent-green);
+        }
+        .article-breadcrumb svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+        .article-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.3;
+            margin-bottom: 16px;
+        }
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .article-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .article-meta-item svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            color: var(--text-tertiary);
+        }
+        .article-badge {
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .article-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .article-tag {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(59, 130, 246, 0.08);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .article-tag:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        
+        /* 文章内容 */
+        .article-content {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        .article-content h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 32px 0 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+        }
+        .article-content h2:first-child {
+            margin-top: 0;
+        }
+        .article-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 12px;
+        }
+        .article-content p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .article-content ul, .article-content ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+        .article-content li {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .article-content code {
+            background: rgba(16, 185, 129, 0.08);
+            color: var(--accent-green);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 14px;
+        }
+        .article-content pre {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        .article-content pre code {
+            background: none;
+            color: #e2e8f0;
+            padding: 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .article-content blockquote {
+            border-left: 4px solid var(--accent-green);
+            background: rgba(16, 185, 129, 0.05);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .article-content blockquote p {
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .article-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .article-content th, .article-content td {
+            padding: 12px 16px;
+            text-align: left;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .article-content th {
+            background: rgba(248, 250, 252, 0.9);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .article-content td {
+            color: var(--text-secondary);
+        }
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+        .warning-box-title {
+            font-weight: 600;
+            color: #d97706;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .warning-box p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        /* 侧边栏 */
+        .article-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .article-toc {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            position: sticky;
+            top: 24px;
+        }
+        .article-toc-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .article-toc-title svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            color: var(--accent-green);
+        }
+        .article-toc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .article-toc-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding-left: 12px;
+            border-left: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .article-toc-item:hover {
+            color: var(--accent-green);
+        }
+        .article-toc-item.active {
+            color: var(--accent-green);
+            border-left-color: var(--accent-green);
+        }
+        .article-toc-item.sub {
+            padding-left: 24px;
+            font-size: 12px;
+        }
+        
+        /* 相关文章 */
+        .related-articles {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .related-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+        .related-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .related-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        .related-item:hover {
+            color: var(--accent-green);
+        }
+        .related-item svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        /* 底部导航 */
+        .article-nav {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .article-nav-item {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .article-nav-item:hover {
+            border-color: var(--accent-green);
+        }
+        .article-nav-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+        .article-nav-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+        .article-nav-item.next {
+            text-align: right;
+        }
+        
+        @media (max-width: 960px) {
+            .article-layout {
+                grid-template-columns: 1fr;
+            }
+            .article-sidebar {
+                order: -1;
+            }
+            .article-toc {
+                position: static;
+            }
+        }
+        @media (max-width: 640px) {
+            .article-container {
+                padding: 16px;
+            }
+            .article-title {
+                font-size: 24px;
+            }
+            .article-content {
+                padding: 20px;
+            }
+            .article-nav {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout" style="margin-left: 0; margin-right: 0;">
+        <article class="content article-container" itemscope itemtype="https://schema.org/TechArticle">
+            <!-- 文章头部 -->
+            <header class="article-header">
+                <nav class="article-breadcrumb" aria-label="面包屑导航">
+                    <a href="../index.html">知识库</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <a href="../index.html?cat=websec">Web安全</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>SQL注入</span>
+                </nav>
+                <h1 class="article-title" itemprop="headline">SQL注入攻击完全指南：从入门到精通</h1>
+                <div class="article-meta">
+                    <span class="article-badge">高危漏洞</span>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <time datetime="2024-12-20" itemprop="datePublished">2024-12-20</time>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span itemprop="author">XHSecTeam</span>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>2,345 阅读</span>
+                    </div>
+                </div>
+                <div class="article-tags">
+                    <a href="../index.html?tag=sql" class="article-tag">SQL注入</a>
+                    <a href="../index.html?tag=websec" class="article-tag">Web安全</a>
+                    <a href="../index.html?tag=owasp" class="article-tag">OWASP</a>
+                    <a href="../index.html?tag=database" class="article-tag">数据库安全</a>
+                </div>
+            </header>
+            
+            <div class="article-layout">
+                <!-- 文章正文 -->
+                <div class="article-content" itemprop="articleBody">
+                    <h2 id="intro">一、什么是SQL注入</h2>
+                    <p>SQL注入（SQL Injection）是一种常见的Web安全漏洞，攻击者通过在Web应用的输入参数中插入恶意的SQL代码，使得后端数据库执行非预期的SQL语句，从而实现数据泄露、权限提升甚至服务器控制。</p>
+                    
+                    <blockquote>
+                        <p>SQL注入长期位列OWASP Top 10安全风险榜首，是Web应用中最危险且最常见的漏洞类型之一。</p>
+                    </blockquote>
+                    
+                    <h2 id="principle">二、SQL注入原理</h2>
+                    <p>SQL注入的本质是用户输入的数据被当作SQL代码执行。当Web应用直接将用户输入拼接到SQL查询语句中时，就可能产生SQL注入漏洞。</p>
+                    
+                    <h3 id="example">2.1 漏洞示例</h3>
+                    <p>考虑以下PHP代码：</p>
+                    <pre><code>$username = $_GET['username'];
+$password = $_GET['password'];
+$sql = "SELECT * FROM users WHERE username='$username' AND password='$password'";
+$result = mysqli_query($conn, $sql);</code></pre>
+                    
+                    <p>攻击者输入用户名为 <code>admin' --</code>，密码任意，则SQL语句变为：</p>
+                    <pre><code>SELECT * FROM users WHERE username='admin' --' AND password='xxx'</code></pre>
+                    
+                    <p><code>--</code> 是SQL注释符，后面的密码验证被注释掉，攻击者无需密码即可登录admin账户。</p>
+                    
+                    <h2 id="types">三、SQL注入类型</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>注入类型</th>
+                                <th>描述</th>
+                                <th>检测难度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>联合查询注入</td>
+                                <td>利用UNION合并查询结果</td>
+                                <td>低</td>
+                            </tr>
+                            <tr>
+                                <td>报错注入</td>
+                                <td>利用数据库报错信息获取数据</td>
+                                <td>低</td>
+                            </tr>
+                            <tr>
+                                <td>布尔盲注</td>
+                                <td>根据页面响应差异判断</td>
+                                <td>中</td>
+                            </tr>
+                            <tr>
+                                <td>时间盲注</td>
+                                <td>根据响应时间差异判断</td>
+                                <td>高</td>
+                            </tr>
+                            <tr>
+                                <td>堆叠注入</td>
+                                <td>执行多条SQL语句</td>
+                                <td>中</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3 id="union">3.1 联合查询注入</h3>
+                    <p>联合查询注入是最常用的注入方式，通过 <code>UNION SELECT</code> 语句将攻击者的查询结果与原查询合并输出。</p>
+                    
+                    <p>注入步骤：</p>
+                    <ol>
+                        <li>判断注入点：添加单引号观察报错</li>
+                        <li>判断列数：使用 <code>ORDER BY</code> 逐步增加</li>
+                        <li>确定显示位：使用 <code>UNION SELECT 1,2,3...</code></li>
+                        <li>获取数据库信息：查询 <code>database()</code>、<code>version()</code></li>
+                        <li>获取表名和列名：查询 <code>information_schema</code></li>
+                        <li>提取目标数据</li>
+                    </ol>
+                    
+                    <pre><code># 判断列数
+?id=1 ORDER BY 4--+
+
+# 确定显示位
+?id=-1 UNION SELECT 1,2,3,4--+
+
+# 获取数据库名
+?id=-1 UNION SELECT 1,database(),3,4--+
+
+# 获取表名
+?id=-1 UNION SELECT 1,group_concat(table_name),3,4 FROM information_schema.tables WHERE table_schema=database()--+</code></pre>
+                    
+                    <h3 id="blind">3.2 布尔盲注</h3>
+                    <p>当页面没有数据回显，但根据条件真假会有不同响应时，可以使用布尔盲注逐字符猜解数据。</p>
+                    
+                    <pre><code># 判断数据库名长度
+?id=1 AND LENGTH(database())=8--+
+
+# 逐字符猜解数据库名
+?id=1 AND ASCII(SUBSTR(database(),1,1))=115--+</code></pre>
+                    
+                    <h3 id="time">3.3 时间盲注</h3>
+                    <p>当页面对任何输入都返回相同结果时，可以通过延时函数判断条件是否成立。</p>
+                    
+                    <pre><code># 如果条件为真，延时5秒
+?id=1 AND IF(LENGTH(database())=8,SLEEP(5),0)--+</code></pre>
+                    
+                    <div class="warning-box">
+                        <div class="warning-box-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            法律声明
+                        </div>
+                        <p>本文仅供安全学习和研究使用。未经授权对他人系统进行渗透测试属于违法行为，请在合法授权范围内进行安全测试。</p>
+                    </div>
+                    
+                    <h2 id="defense">四、防御措施</h2>
+                    
+                    <h3 id="param">4.1 参数化查询</h3>
+                    <p>使用预处理语句和参数化查询是防止SQL注入最有效的方法：</p>
+                    <pre><code>// PHP PDO 示例
+$stmt = $pdo->prepare('SELECT * FROM users WHERE username = ? AND password = ?');
+$stmt->execute([$username, $password]);
+
+// Java PreparedStatement 示例
+PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE username=? AND password=?");
+ps.setString(1, username);
+ps.setString(2, password);</code></pre>
+                    
+                    <h3 id="filter">4.2 输入过滤</h3>
+                    <ul>
+                        <li>对用户输入进行严格的白名单验证</li>
+                        <li>过滤或转义特殊字符：单引号、双引号、分号等</li>
+                        <li>限制输入长度和类型</li>
+                    </ul>
+                    
+                    <h3 id="privilege">4.3 最小权限原则</h3>
+                    <ul>
+                        <li>数据库账户使用最小必要权限</li>
+                        <li>禁止Web应用使用root/sa等高权限账户</li>
+                        <li>不同应用使用不同的数据库账户</li>
+                    </ul>
+                    
+                    <h2 id="tools">五、检测工具</h2>
+                    <ul>
+                        <li><strong>SQLMap</strong>：最强大的自动化SQL注入工具</li>
+                        <li><strong>BurpSuite</strong>：综合Web安全测试平台</li>
+                        <li><strong>OWASP ZAP</strong>：开源Web应用安全扫描器</li>
+                        <li><strong>Havij</strong>：图形化SQL注入工具</li>
+                    </ul>
+                    
+                    <h2 id="summary">六、总结</h2>
+                    <p>SQL注入是Web应用最严重的安全威胁之一，攻击者可以通过它获取敏感数据、绕过认证、甚至控制整个数据库服务器。防御SQL注入的关键是使用参数化查询，结合输入验证和最小权限原则，构建多层次的安全防护体系。</p>
+                </div>
+                
+                <!-- 侧边栏 -->
+                <aside class="article-sidebar">
+                    <nav class="article-toc">
+                        <h2 class="article-toc-title">
+                            <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            目录
+                        </h2>
+                        <div class="article-toc-list">
+                            <a href="#intro" class="article-toc-item active">一、什么是SQL注入</a>
+                            <a href="#principle" class="article-toc-item">二、SQL注入原理</a>
+                            <a href="#example" class="article-toc-item sub">2.1 漏洞示例</a>
+                            <a href="#types" class="article-toc-item">三、SQL注入类型</a>
+                            <a href="#union" class="article-toc-item sub">3.1 联合查询注入</a>
+                            <a href="#blind" class="article-toc-item sub">3.2 布尔盲注</a>
+                            <a href="#time" class="article-toc-item sub">3.3 时间盲注</a>
+                            <a href="#defense" class="article-toc-item">四、防御措施</a>
+                            <a href="#param" class="article-toc-item sub">4.1 参数化查询</a>
+                            <a href="#filter" class="article-toc-item sub">4.2 输入过滤</a>
+                            <a href="#privilege" class="article-toc-item sub">4.3 最小权限原则</a>
+                            <a href="#tools" class="article-toc-item">五、检测工具</a>
+                            <a href="#summary" class="article-toc-item">六、总结</a>
+                        </div>
+                    </nav>
+                    
+                    <div class="related-articles">
+                        <h3 class="related-title">相关文章</h3>
+                        <div class="related-list">
+                            <a href="xss-attack-defense.html" class="related-item">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                XSS跨站脚本攻击与防御
+                            </a>
+                            <a href="ssrf-vulnerability-analysis.html" class="related-item">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                SSRF服务端请求伪造漏洞
+                            </a>
+                            <a href="file-upload-bypass.html" class="related-item">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                文件上传漏洞绕过技术
+                            </a>
+                            <a href="burpsuite-complete-guide.html" class="related-item">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                BurpSuite完全使用指南
+                            </a>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+            
+            <!-- 上下篇导航 -->
+            <nav class="article-nav" aria-label="文章导航">
+                <a href="file-upload-bypass.html" class="article-nav-item prev">
+                    <div class="article-nav-label">← 上一篇</div>
+                    <div class="article-nav-title">文件上传漏洞绕过技术汇总</div>
+                </a>
+                <a href="xss-attack-defense.html" class="article-nav-item next">
+                    <div class="article-nav-label">下一篇 →</div>
+                    <div class="article-nav-title">XSS跨站脚本攻击与防御实战</div>
+                </a>
+            </nav>
+        </article>
+    </div>
+    
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "SQL注入攻击完全指南：从入门到精通",
+        "description": "深入讲解SQL注入的原理、分类、检测方法和防御措施",
+        "author": {
+            "@type": "Organization",
+            "name": "XHSecTeam"
+        },
+        "datePublished": "2024-12-20",
+        "publisher": {
+            "@type": "Organization",
+            "name": "XHSecTeam"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://xhsecteam.com/knowledge/articles/sql-injection-guide.html"
+        }
+    }
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            XHLayout.loadFooter();
+            
+            // 目录高亮
+            const tocItems = document.querySelectorAll('.article-toc-item');
+            const headings = document.querySelectorAll('.article-content h2, .article-content h3');
+            
+            window.addEventListener('scroll', () => {
+                let current = '';
+                headings.forEach(heading => {
+                    const top = heading.offsetTop;
+                    if (scrollY >= top - 100) {
+                        current = heading.getAttribute('id');
+                    }
+                });
+                tocItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === '#' + current) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

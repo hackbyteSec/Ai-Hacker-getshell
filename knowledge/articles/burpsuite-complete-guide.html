@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BurpSuite完全使用指南 - XHSecTeam安全知识库</title>
+    <meta name="description" content="详细讲解BurpSuite的各个模块：Proxy、Scanner、Intruder、Repeater、Decoder等，以及插件开发与实战技巧。">
+    <meta name="keywords" content="BurpSuite,抓包,渗透测试,Web安全,Proxy,Intruder,漏洞扫描">
+    <meta name="author" content="XHSecTeam">
+    <meta name="robots" content="index, follow">
+    
+    <link rel="stylesheet" href="../../static/css/common.css">
+    <script src="../../static/css/common.js"></script>
+    <script src="../../static/js/layout.js"></script>
+    <style>
+        .article-container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
+        .article-layout { display: grid; grid-template-columns: 1fr 280px; gap: 40px; }
+        .article-header { margin-bottom: 32px; }
+        .article-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+        .article-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .article-breadcrumb a:hover { color: var(--accent-green); }
+        .article-breadcrumb svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .article-title { font-size: 32px; font-weight: 800; color: var(--text-primary); line-height: 1.3; margin-bottom: 16px; }
+        .article-meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); }
+        .article-meta-item { display: flex; align-items: center; gap: 6px; }
+        .article-meta-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; color: var(--text-tertiary); }
+        .article-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .article-tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .article-tag { padding: 4px 12px; border-radius: 999px; font-size: 12px; background: rgba(59, 130, 246, 0.08); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); text-decoration: none; }
+        .article-content { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 32px; }
+        .article-content h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 32px 0 16px; padding-bottom: 10px; border-bottom: 2px solid rgba(16, 185, 129, 0.3); }
+        .article-content h2:first-child { margin-top: 0; }
+        .article-content h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 24px 0 12px; }
+        .article-content p { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 16px; }
+        .article-content ul, .article-content ol { margin: 16px 0; padding-left: 24px; }
+        .article-content li { font-size: 15px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 8px; }
+        .article-content code { background: rgba(16, 185, 129, 0.08); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        .article-content pre { background: #1e293b; border-radius: 12px; padding: 20px; overflow-x: auto; margin: 20px 0; }
+        .article-content pre code { background: none; color: #e2e8f0; padding: 0; font-size: 13px; line-height: 1.6; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        .article-content th, .article-content td { padding: 12px 16px; text-align: left; border: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-content th { background: rgba(248, 250, 252, 0.9); font-weight: 600; color: var(--text-primary); }
+        .article-sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .article-toc { background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 20px; position: sticky; top: 24px; }
+        .article-toc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+        .article-toc-list { display: flex; flex-direction: column; gap: 10px; }
+        .article-toc-item { font-size: 13px; color: var(--text-secondary); text-decoration: none; padding-left: 12px; border-left: 2px solid transparent; }
+        .article-toc-item:hover { color: var(--accent-green); }
+        .article-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; padding-top: 32px; border-top: 1px solid rgba(148, 163, 184, 0.2); }
+        .article-nav-item { padding: 20px; background: rgba(255, 255, 255, 0.96); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; text-decoration: none; }
+        .article-nav-item:hover { border-color: var(--accent-green); }
+        .article-nav-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+        .article-nav-title { font-size: 14px; font-weight: 600; color: var(--accent-green); }
+        .article-nav-item.next { text-align: right; }
+        @media (max-width: 960px) { .article-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="main-layout" style="margin-left: 0; margin-right: 0;">
+        <article class="content article-container" itemscope itemtype="https://schema.org/TechArticle">
+            <header class="article-header">
+                <nav class="article-breadcrumb">
+                    <a href="../index.html">知识库</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <a href="../index.html?cat=tools">安全工具</a>
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    <span>BurpSuite</span>
+                </nav>
+                <h1 class="article-title" itemprop="headline">BurpSuite完全使用指南</h1>
+                <div class="article-meta">
+                    <span class="article-badge">安全工具</span>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <time datetime="2024-12-10">2024-12-10</time>
+                    </div>
+                    <div class="article-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>980 阅读</span>
+                    </div>
+                </div>
+                <div class="article-tags">
+                    <a href="#" class="article-tag">BurpSuite</a>
+                    <a href="#" class="article-tag">抓包</a>
+                    <a href="#" class="article-tag">渗透工具</a>
+                </div>
+            </header>
+            
+            <div class="article-layout">
+                <div class="article-content" itemprop="articleBody">
+                    <h2 id="intro">一、BurpSuite简介</h2>
+                    <p>BurpSuite是PortSwigger公司开发的一款集成化Web应用安全测试平台，是渗透测试人员必备的工具之一。它提供了从基础代理到高级漏洞扫描的完整功能集。</p>
+                    
+                    <h2 id="modules">二、核心模块</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>模块</th>
+                                <th>功能</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Proxy</td><td>HTTP/HTTPS代理，拦截和修改请求</td></tr>
+                            <tr><td>Scanner</td><td>自动漏洞扫描（Pro版）</td></tr>
+                            <tr><td>Intruder</td><td>自动化攻击，暴力破解</td></tr>
+                            <tr><td>Repeater</td><td>手动修改和重放请求</td></tr>
+                            <tr><td>Sequencer</td><td>Token随机性分析</td></tr>
+                            <tr><td>Decoder</td><td>编解码工具</td></tr>
+                            <tr><td>Comparer</td><td>数据比对</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <h2 id="proxy">三、Proxy代理配置</h2>
+                    <h3>3.1 浏览器配置</h3>
+                    <p>将浏览器代理设置为 <code>127.0.0.1:8080</code>，然后在BurpSuite中开启拦截。</p>
+                    
+                    <h3>3.2 HTTPS证书</h3>
+                    <ol>
+                        <li>访问 <code>http://burp</code> 下载CA证书</li>
+                        <li>将证书导入浏览器的受信任根证书</li>
+                        <li>即可拦截HTTPS流量</li>
+                    </ol>
+                    
+                    <h2 id="intruder">四、Intruder攻击</h2>
+                    <p>Intruder是BurpSuite最强大的模块之一，支持多种攻击类型：</p>
+                    <ul>
+                        <li><strong>Sniper</strong>：单点逐个测试</li>
+                        <li><strong>Battering Ram</strong>：所有位置使用相同值</li>
+                        <li><strong>Pitchfork</strong>：多位置并行测试</li>
+                        <li><strong>Cluster Bomb</strong>：所有组合的笛卡尔积</li>
+                    </ul>
+                    
+                    <h2 id="repeater">五、Repeater使用</h2>
+                    <p>Repeater用于手动修改HTTP请求并发送，是测试漏洞的最佳工具：</p>
+                    <ol>
+                        <li>在Proxy History中右键选择"Send to Repeater"</li>
+                        <li>在Repeater中修改请求参数</li>
+                        <li>点击"Send"发送请求并查看响应</li>
+                        <li>可以使用快捷键 Ctrl+R 快速重放</li>
+                    </ol>
+                    
+                    <h2 id="extensions">六、插件推荐</h2>
+                    <ul>
+                        <li><strong>HaE</strong>：高亮和提取敏感信息</li>
+                        <li><strong>JSON Beautifier</strong>：美化JSON响应</li>
+                        <li><strong>Autorize</strong>：越权测试</li>
+                        <li><strong>SQLiPy</strong>：集成SQLMap</li>
+                        <li><strong>Logger++</strong>：增强日志功能</li>
+                    </ul>
+                </div>
+                
+                <aside class="article-sidebar">
+                    <nav class="article-toc">
+                        <h2 class="article-toc-title">目录</h2>
+                        <div class="article-toc-list">
+                            <a href="#intro" class="article-toc-item">一、BurpSuite简介</a>
+                            <a href="#modules" class="article-toc-item">二、核心模块</a>
+                            <a href="#proxy" class="article-toc-item">三、Proxy代理配置</a>
+                            <a href="#intruder" class="article-toc-item">四、Intruder攻击</a>
+                            <a href="#repeater" class="article-toc-item">五、Repeater使用</a>
+                            <a href="#extensions" class="article-toc-item">六、插件推荐</a>
+                        </div>
+                    </nav>
+                </aside>
+            </div>
+            
+            <nav class="article-nav">
+                <a href="reverse-shell-techniques.html" class="article-nav-item prev">
+                    <div class="article-nav-label">← 上一篇</div>
+                    <div class="article-nav-title">反弹Shell技术大全与免杀绕过</div>
+                </a>
+                <a href="ssrf-vulnerability-analysis.html" class="article-nav-item next">
+                    <div class="article-nav-label">下一篇 →</div>
+                    <div class="article-nav-title">SSRF服务端请求伪造漏洞深度分析</div>
+                </a>
+            </nav>
+        </article>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

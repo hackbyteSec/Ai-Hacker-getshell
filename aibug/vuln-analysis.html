@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI漏洞分析 - XHSecTeam</title>
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        /* AI漏洞分析页面特有样式 */
+        
+        /* 页面标题区域 */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+        }
+        .page-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-title-badge {
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .page-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-btn {
+            height: 36px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(248, 250, 252, 0.9);
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .header-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        .header-btn.primary {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #fff;
+        }
+        .header-btn.primary:hover {
+            background: #059669;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.10);
+        }
+        .stat-card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .stat-card-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .stat-card.high .stat-card-value { color: #ef4444; }
+        .stat-card.medium .stat-card-value { color: #f59e0b; }
+        .stat-card.low .stat-card-value { color: #3b82f6; }
+        .stat-card.info .stat-card-value { color: #94a3b8; }
+        @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 640px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        /* 网站漏洞卡片 */
+        .site-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.65));
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .site-header:hover {
+            background: rgba(241, 245, 249, 0.9);
+        }
+        .site-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .site-expand-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            transition: transform 0.2s;
+        }
+        .site-expand-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .site-card.expanded .site-expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .site-info {
+            min-width: 0;
+            flex: 1;
+        }
+        .site-url {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .site-url a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .site-url a:hover {
+            color: var(--accent-green);
+        }
+        .site-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .site-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .site-vuln-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .site-vuln-count.high {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+        .site-vuln-count.medium {
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+        }
+        .site-vuln-count.low {
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+        }
+        .site-vuln-count .count-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .site-vuln-count.high .count-dot { background: #ef4444; }
+        .site-vuln-count.medium .count-dot { background: #f59e0b; }
+        .site-vuln-count.low .count-dot { background: #3b82f6; }
+
+        /* 网站内容 */
+        .site-body {
+            display: none;
+            padding: 0;
+        }
+        .site-card.expanded .site-body {
+            display: block;
+        }
+
+        /* 子域名/旁站区域 */
+        .subdomain-section {
+            border-top: 1px solid rgba(148, 163, 184, 0.15);
+        }
+        .subdomain-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(248, 250, 252, 0.6);
+            cursor: pointer;
+        }
+        .subdomain-header:hover {
+            background: rgba(241, 245, 249, 0.8);
+        }
+        .subdomain-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subdomain-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+            font-weight: 700;
+        }
+        .subdomain-list {
+            display: none;
+            padding: 0;
+        }
+        .subdomain-section.expanded .subdomain-list {
+            display: block;
+        }
+
+        /* 子域名项 */
+        .subdomain-item {
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        .subdomain-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px 10px 40px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .subdomain-item-header:hover {
+            background: rgba(248, 250, 252, 0.8);
+        }
+        .subdomain-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .subdomain-item-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(100, 116, 139, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .subdomain-item-icon svg {
+            width: 12px;
+            height: 12px;
+            stroke: var(--text-tertiary);
+            fill: none;
+            stroke-width: 2;
+        }
+        .subdomain-item-url {
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+        }
+        .subdomain-item-url a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .subdomain-item-url a:hover {
+            color: var(--accent-green);
+        }
+        .subdomain-item-type {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+        .subdomain-item-type.subdomain {
+            background: rgba(6, 182, 212, 0.12);
+            color: #0891b2;
+        }
+        .subdomain-item-type.sidesite {
+            background: rgba(168, 85, 247, 0.12);
+            color: #9333ea;
+        }
+
+        /* 漏洞列表 */
+        .vuln-list {
+            padding: 16px 20px;
+        }
+        .vuln-item {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .vuln-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        .vuln-item:last-child {
+            margin-bottom: 0;
+        }
+        .vuln-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .vuln-item-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .vuln-item-level {
+            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .vuln-item-level.high {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+        .vuln-item-level.medium {
+            background: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+        }
+        .vuln-item-level.low {
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+        }
+        .vuln-item-level.info {
+            background: rgba(148, 163, 184, 0.15);
+            color: #64748b;
+        }
+        
+        /* 漏洞项操作按钮容器 */
+        .vuln-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* AI分析按钮 */
+        .ai-analyze-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ai-analyze-btn:hover {
+            background: rgba(241, 245, 249, 0.95);
+            border-color: #10b981;
+            color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ai-analyze-btn svg {
+            width: 10px;
+            height: 10px;
+        }
+        
+        .vuln-item-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .vuln-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .vuln-item-meta span {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: #334155;
+            font-weight: 600;
+        }
+        .vuln-item-code {
+            position: relative;
+            background: #f8fafc;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+            color: #334155;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .vuln-item-code strong {
+            color: #0f172a;
+        }
+
+        /* AI分析结果 */
+        .ai-analysis {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.08));
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 12px;
+        }
+        .ai-analysis-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .ai-analysis-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .ai-analysis-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #059669;
+        }
+        .ai-analysis-content {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: rgba(148, 163, 184, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .empty-state-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--text-tertiary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+        .empty-state-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .empty-state-desc {
+            font-size: 13px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .page-header-right {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            .site-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .site-header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+        
+        /* 代码块复制按钮 */
+        .vuln-item-code {
+            position: relative;
+        }
+        
+        .code-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            z-index: 1;
+        }
+        
+        .code-copy-btn:hover {
+            background: rgba(241, 245, 249, 0.95);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .code-copy-btn.copied {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+        
+        /* 导航栏搜索框 */
+        .nav-search {
+            display: flex;
+            align-items: center;
+            height: 32px;
+            background: rgba(248, 250, 252, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 999px;
+            padding: 2px;
+            margin-left: 12px;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-search:hover {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 2px rgba(0, 214, 143, 0.2);
+        }
+        
+        .nav-search-input {
+            height: 26px;
+            padding: 0 10px;
+            padding-right: 4px;
+            border: none;
+            background: transparent;
+            color: #334155;
+            font-size: 12px;
+            outline: none;
+            width: 160px;
+        }
+        
+        .nav-search-input::placeholder {
+            color: #94a3b8;
+        }
+        
+        .nav-search-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: transparent;
+            border-radius: 50%;
+            color: #94a3b8;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-search-btn:hover {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--accent-green);
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- 导航栏占位符，由 layout.js 加载 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <div class="main-layout">
+        <main class="content">
+            <!-- 浮动导航占位符，由 layout.js 加载 -->
+            <div class="floating-nav" id="floatingNav"></div>
+
+            <!-- 页面头部 -->
+            <div class="page-header">
+                <div class="page-header-left">
+                    <div class="page-title">
+                        AI 漏洞分析报告
+                        <span class="page-title-badge">INTELLIGENCE</span>
+                    </div>
+                    <div class="page-subtitle">智能分析扫描结果，生成详细的漏洞报告与修复建议</div>
+                </div>
+                <div class="page-header-right">
+                    <button class="header-btn" onclick="refreshAnalysis()">
+                         刷新分析
+                    </button>
+                    <button class="header-btn primary" onclick="startAiAnalysis()">
+                         AI 深度分析
+                    </button>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-value" id="totalSites">12</div>
+                    <div class="stat-card-label">扫描站点</div>
+                </div>
+                <div class="stat-card high">
+                    <div class="stat-card-value" id="highVulns">8</div>
+                    <div class="stat-card-label">高危漏洞</div>
+                </div>
+                <div class="stat-card medium">
+                    <div class="stat-card-value" id="mediumVulns">15</div>
+                    <div class="stat-card-label">中危漏洞</div>
+                </div>
+                <div class="stat-card low">
+                    <div class="stat-card-value" id="lowVulns">6</div>
+                    <div class="stat-card-label">低危漏洞</div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-card-value" id="infoVulns">23</div>
+                    <div class="stat-card-label">信息泄露</div>
+                </div>
+            </div>
+
+            <!-- 网站漏洞列表 -->
+            <div id="siteList">
+                <!-- 网站1 -->
+                <div class="site-card expanded" id="site-1">
+                    <div class="site-header" onclick="toggleSite('site-1')">
+                        <div class="site-header-left">
+                            <div class="site-expand-icon">
+                                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                            <div class="site-info">
+                                <div class="site-url"><a href="https://movie.example1.com" target="_blank">movie.example1.com</a></div>
+                                <div class="site-meta">
+                                    <span>IP: 192.168.1.100</span>
+                                    <span>苹果CMS V10</span>
+                                    <span>最后扫描: 2024-01-15 14:30</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="site-header-right">
+                            <div class="site-vuln-count high"><span class="count-dot"></span> 3 高危</div>
+                            <div class="site-vuln-count medium"><span class="count-dot"></span> 2 中危</div>
+                        </div>
+                    </div>
+                    <div class="site-body">
+                        <!-- 主站漏洞 -->
+                        <div class="vuln-list">
+                            <div class="vuln-item">
+                                <div class="vuln-item-header">
+                                    <div class="vuln-item-title">SQL注入漏洞</div>
+                                    <div class="vuln-item-actions">
+                                        <div class="vuln-item-level high">高危</div>
+                                        <button class="ai-analyze-btn" onclick="analyzeVulnerability('SQL注入漏洞', this)">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                            </svg>
+                                            AI分析
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="vuln-item-desc">
+                                    苹果CMS v10 搜索功能存在SQL注入漏洞，未对用户输入进行过滤，攻击者可直接获取数据库管理员账号密码、用户数据等敏感信息。
+                                </div>
+                                <div class="vuln-item-meta">
+                                    <span>CVE-2023-27890</span>
+                                    <span>影响版本: v10.x</span>
+                                    <span>CVSS: 9.8</span>
+                                    <span>路径: /index.php?m=vod-search</span>
+                                </div>
+                                <div class="vuln-item-code"><strong>利用方法:</strong>
+curl "https://movie.example1.com/index.php?m=vod-search&wd=1'%20AND%20(SELECT%20SLEEP(5))--+"
+
+# 读取管理员账号
+curl "https://movie.example1.com/index.php?m=vod-search&wd=1'%20UNION%20SELECT%201,user_name,user_pwd,4,5%20FROM%20mac_admin--+"</div>
+                                <div class="ai-analysis">
+                                    <div class="ai-analysis-header">
+                                        <div class="ai-analysis-icon">AI</div>
+                                        <div class="ai-analysis-title">AI 分析建议</div>
+                                    </div>
+                                    <div class="ai-analysis-content">
+                                        该漏洞为高危SQL注入，建议立即修复。修复方案：1) 升级至最新版本 v10.8；2) 对搜索参数进行严格过滤和预编译处理；3) 启用WAF规则拦截SQL注入攻击。
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="vuln-item">
+                                <div class="vuln-item-header">
+                                    <div class="vuln-item-title">远程代码执行(RCE)</div>
+                                    <div class="vuln-item-actions">
+                                        <div class="vuln-item-level high">高危</div>
+                                        <button class="ai-analyze-btn" onclick="analyzeVulnerability('远程代码执行(RCE)', this)">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                            </svg>
+                                            AI分析
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="vuln-item-desc">
+                                    后台模板编辑功能存在任意文件写入漏洞，攻击者登录后台后可直接写入WebShell，获取服务器完整控制权限。
+                                </div>
+                                <div class="vuln-item-meta">
+                                    <span>CVE-2022-41842</span>
+                                    <span>影响版本: v8.x - v10.x</span>
+                                    <span>CVSS: 9.1</span>
+                                </div>
+                                <div class="ai-analysis">
+                                    <div class="ai-analysis-header">
+                                        <div class="ai-analysis-icon">AI</div>
+                                        <div class="ai-analysis-title">AI 分析建议</div>
+                                    </div>
+                                    <div class="ai-analysis-content">
+                                        RCE漏洞风险极高，可导致服务器完全沦陷。建议：1) 限制后台访问IP白名单；2) 修改默认后台路径；3) 禁用模板在线编辑功能；4) 定期审计后台操作日志。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 子域名/旁站区域 -->
+                        <div class="subdomain-section expanded" id="subdomain-1">
+                            <div class="subdomain-header" onclick="toggleSubdomain('subdomain-1')">
+                                <div class="subdomain-title">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                                    子域名 / 旁站
+                                    <span class="subdomain-badge">3 个资产</span>
+                                </div>
+                            </div>
+                            <div class="subdomain-list">
+                                <!-- 子域名1 -->
+                                <div class="subdomain-item">
+                                    <div class="subdomain-item-header">
+                                        <div class="subdomain-item-left">
+                                            <div class="subdomain-item-icon">
+                                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                            </div>
+                                            <div class="subdomain-item-url"><a href="https://api.movie.example1.com" target="_blank">api.movie.example1.com</a></div>
+                                            <span class="subdomain-item-type subdomain">子域名</span>
+                                        </div>
+                                        <div class="site-header-right">
+                                            <div class="site-vuln-count high"><span class="count-dot"></span> 1</div>
+                                        </div>
+                                    </div>
+                                    <div class="vuln-list">
+                                        <div class="vuln-item">
+                                            <div class="vuln-item-header">
+                                                <div class="vuln-item-title">API接口未授权访问</div>
+                                                <div class="vuln-item-actions">
+                                                    <div class="vuln-item-level high">高危</div>
+                                                    <button class="ai-analyze-btn" onclick="analyzeVulnerability('API接口未授权访问', this)">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                            <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                                        </svg>
+                                                        AI分析
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="vuln-item-desc">
+                                                API接口缺少身份验证，攻击者可直接调用敏感接口获取用户数据、修改系统配置。
+                                            </div>
+                                            <div class="vuln-item-meta">
+                                                <span>路径: /api/user/list</span>
+                                                <span>影响: 数据泄露</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 子域名2 -->
+                                <div class="subdomain-item">
+                                    <div class="subdomain-item-header">
+                                        <div class="subdomain-item-left">
+                                            <div class="subdomain-item-icon">
+                                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                            </div>
+                                            <div class="subdomain-item-url"><a href="https://admin.movie.example1.com" target="_blank">admin.movie.example1.com</a></div>
+                                            <span class="subdomain-item-type subdomain">子域名</span>
+                                        </div>
+                                        <div class="site-header-right">
+                                            <div class="site-vuln-count medium"><span class="count-dot"></span> 1</div>
+                                        </div>
+                                    </div>
+                                    <div class="vuln-list">
+                                        <div class="vuln-item">
+                                            <div class="vuln-item-header">
+                                                <div class="vuln-item-title">后台弱口令</div>
+                                                <div class="vuln-item-actions">
+                                                    <div class="vuln-item-level medium">中危</div>
+                                                    <button class="ai-analyze-btn" onclick="analyzeVulnerability('后台弱口令', this)">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                            <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                                        </svg>
+                                                        AI分析
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="vuln-item-desc">
+                                                后台登录使用默认弱口令 admin/admin123，可被暴力破解获取管理员权限。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 旁站 -->
+                                <div class="subdomain-item">
+                                    <div class="subdomain-item-header">
+                                        <div class="subdomain-item-left">
+                                            <div class="subdomain-item-icon">
+                                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                            </div>
+                                            <div class="subdomain-item-url"><a href="https://forum.example1.com" target="_blank">forum.example1.com</a></div>
+                                            <span class="subdomain-item-type sidesite">旁站</span>
+                                        </div>
+                                        <div class="site-header-right">
+                                            <div class="site-vuln-count medium"><span class="count-dot"></span> 1</div>
+                                        </div>
+                                    </div>
+                                    <div class="vuln-list">
+                                        <div class="vuln-item">
+                                            <div class="vuln-item-header">
+                                                <div class="vuln-item-title">XSS跨站脚本漏洞</div>
+                                                <div class="vuln-item-actions">
+                                                    <div class="vuln-item-level medium">中危</div>
+                                                    <button class="ai-analyze-btn" onclick="analyzeVulnerability('XSS跨站脚本漏洞', this)">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                            <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                                        </svg>
+                                                        AI分析
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="vuln-item-desc">
+                                                论坛评论功能存在存储型XSS漏洞，可窃取用户Cookie和会话信息。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 网站2 -->
+                <div class="site-card" id="site-2">
+                    <div class="site-header" onclick="toggleSite('site-2')">
+                        <div class="site-header-left">
+                            <div class="site-expand-icon">
+                                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                            <div class="site-info">
+                                <div class="site-url"><a href="https://video.example2.cn" target="_blank">video.example2.cn</a></div>
+                                <div class="site-meta">
+                                    <span>IP: 192.168.1.101</span>
+                                    <span>苹果CMS V10</span>
+                                    <span>最后扫描: 2024-01-15 14:25</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="site-header-right">
+                            <div class="site-vuln-count high"><span class="count-dot"></span> 2 高危</div>
+                            <div class="site-vuln-count medium"><span class="count-dot"></span> 3 中危</div>
+                            <div class="site-vuln-count low"><span class="count-dot"></span> 1 低危</div>
+                        </div>
+                    </div>
+                    <div class="site-body">
+                        <div class="vuln-list">
+                            <div class="vuln-item">
+                                <div class="vuln-item-header">
+                                    <div class="vuln-item-title">目录遍历漏洞</div>
+                                    <div class="vuln-item-actions">
+                                        <div class="vuln-item-level medium">中危</div>
+                                        <button class="ai-analyze-btn" onclick="analyzeVulnerability('目录遍历漏洞', this)">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                            </svg>
+                                            AI分析
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="vuln-item-desc">
+                                    下载功能存在路径遍历漏洞，攻击者可读取服务器任意文件，包括数据库配置、源码等敏感信息。
+                                </div>
+                                <div class="vuln-item-meta">
+                                    <span>CVE-2021-32156</span>
+                                    <span>影响版本: v8.x - v10.x</span>
+                                    <span>CVSS: 6.5</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 网站3 -->
+                <div class="site-card" id="site-3">
+                    <div class="site-header" onclick="toggleSite('site-3')">
+                        <div class="site-header-left">
+                            <div class="site-expand-icon">
+                                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                            <div class="site-info">
+                                <div class="site-url"><a href="https://film.example3.net" target="_blank">film.example3.net</a></div>
+                                <div class="site-meta">
+                                    <span>IP: 192.168.1.102</span>
+                                    <span>苹果CMS V10</span>
+                                    <span>最后扫描: 2024-01-15 14:20</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="site-header-right">
+                            <div class="site-vuln-count medium"><span class="count-dot"></span> 2 中危</div>
+                            <div class="site-vuln-count low"><span class="count-dot"></span> 3 低危</div>
+                        </div>
+                    </div>
+                    <div class="site-body">
+                        <div class="vuln-list">
+                            <div class="vuln-item">
+                                <div class="vuln-item-header">
+                                    <div class="vuln-item-title">XSS跨站脚本漏洞</div>
+                                    <div class="vuln-item-actions">
+                                        <div class="vuln-item-level medium">中危</div>
+                                        <button class="ai-analyze-btn" onclick="analyzeVulnerability('XSS跨站脚本漏洞', this)">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 10 10 0 0 0-10-10z"/>
+                                                <path d="M8.5 14.5 12 11l3.5 3.5"/>
+                                            </svg>
+                                            AI分析
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="vuln-item-desc">
+                                    搜索功能存在反射型XSS漏洞，攻击者可构造恶意链接，窃取用户Cookie、会话信息。
+                                </div>
+                                <div class="vuln-item-meta">
+                                    <span>CVE-2022-28456</span>
+                                    <span>影响版本: v10.x</span>
+                                    <span>CVSS: 5.4</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- AI 对话面板 -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <div class="ai-title">AI 安全助手</div>
+        </div>
+        <div class="ai-shortcuts">
+            <button class="ai-shortcut" onclick="aiQuickAction('summary')">生成摘要</button>
+            <button class="ai-shortcut" onclick="aiQuickAction('fix')">修复建议</button>
+            <button class="ai-shortcut" onclick="aiQuickAction('priority')">优先级排序</button>
+            <button class="ai-shortcut" onclick="aiQuickAction('report')">生成报告</button>
+        </div>
+        <div class="ai-body" id="aiMessages">
+            <div class="ai-message assistant">你好！我是 AI 安全助手，可以帮你：<br>• 分析漏洞影响范围<br>• 生成修复优先级建议<br>• 导出专业安全报告<br>• 解答安全相关问题<br><br>请问有什么可以帮助你的？</div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" onclick="location.href='index.html'" title="返回扫描">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>继续扫描</span>
+                </button>
+                <button class="tool-btn" onclick="exportReport()" title="导出报告">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>导出报告</span>
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea class="ai-input" id="aiInput" rows="1" placeholder="询问漏洞分析建议..." oninput="autoResize(this)"></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* AI漏洞分析页面 JavaScript */
+
+        // 切换网站展开/收起
+        function toggleSite(siteId) {
+            const card = document.getElementById(siteId);
+            if (card) {
+                card.classList.toggle('expanded');
+            }
+        }
+
+        // 切换子域名区域展开/收起
+        function toggleSubdomain(subdomainId) {
+            const section = document.getElementById(subdomainId);
+            if (section) {
+                section.classList.toggle('expanded');
+            }
+        }
+
+        // 刷新分析
+        function refreshAnalysis() {
+            addAiMessage(null, '正在刷新漏洞分析数据...');
+            setTimeout(() => {
+                addAiMessage(null, '✅ 分析数据已更新！发现 12 个站点，共 52 个漏洞。');
+            }, 1000);
+        }
+
+        // AI深度分析
+        function startAiAnalysis() {
+            addAiMessage(null, '🤖 正在进行 AI 深度分析...<br><br>分析内容包括：<br>• 漏洞关联性分析<br>• 攻击链路推演<br>• 风险评估优先级<br>• 智能修复建议');
+            
+            setTimeout(() => {
+                addAiMessage(null, `<strong>📊 AI 深度分析报告</strong><br><br>
+<strong>1. 高危风险优先处理</strong><br>
+• movie.example1.com - SQL注入（建议立即修复）<br>
+• movie.example1.com - RCE（建议24小时内修复）<br><br>
+<strong>2. 攻击链路分析</strong><br>
+发现潜在攻击路径：SQL注入 → 获取后台凭据 → RCE获取服务器权限<br><br>
+<strong>3. 修复优先级建议</strong><br>
+P0: SQL注入、RCE（2个）<br>
+P1: 未授权访问、弱口令（2个）<br>
+P2: XSS、目录遍历（3个）`);
+            }, 2000);
+        }
+
+        // 导出报告
+        function exportReport() {
+            addAiMessage(null, '📄 正在生成漏洞分析报告...');
+            setTimeout(() => {
+                addAiMessage(null, '✅ 报告已生成！包含 12 个站点、52 个漏洞的完整分析。<br><br>报告格式：HTML / PDF / Markdown');
+            }, 1500);
+        }
+
+        // AI快捷操作
+        function aiQuickAction(type) {
+            const actions = {
+                'summary': {
+                    user: '生成漏洞摘要',
+                    response: `<strong>📋 漏洞摘要</strong><br><br>
+扫描站点：12 个<br>
+总漏洞数：52 个<br><br>
+<strong>风险分布：</strong><br>
+• 高危：8 个 (15.4%)<br>
+• 中危：15 个 (28.8%)<br>
+• 低危：6 个 (11.5%)<br>
+• 信息：23 个 (44.2%)<br><br>
+<strong>最严重漏洞：</strong><br>
+SQL注入（movie.example1.com）- CVSS 9.8`
+                },
+                'fix': {
+                    user: '生成修复建议',
+                    response: `<strong>🔧 修复建议</strong><br><br>
+<strong>立即修复（24小时内）：</strong><br>
+1. SQL注入 - 升级CMS版本，使用参数化查询<br>
+2. RCE漏洞 - 禁用模板在线编辑，限制后台IP<br><br>
+<strong>尽快修复（一周内）：</strong><br>
+3. API未授权 - 添加JWT身份验证<br>
+4. 弱口令 - 强制密码策略，启用2FA<br><br>
+<strong>计划修复：</strong><br>
+5. XSS漏洞 - 输入输出过滤，CSP策略<br>
+6. 目录遍历 - 路径过滤，白名单限制`
+                },
+                'priority': {
+                    user: '漏洞优先级排序',
+                    response: `<strong>📊 漏洞优先级排序</strong><br><br>
+<strong>🔴 P0 - 紧急（立即处理）</strong><br>
+• SQL注入 × 2<br>
+• 远程代码执行 × 2<br><br>
+<strong>🟠 P1 - 高优先级</strong><br>
+• API未授权访问 × 1<br>
+• 后台弱口令 × 2<br><br>
+<strong>🟡 P2 - 中优先级</strong><br>
+• XSS跨站脚本 × 5<br>
+• 目录遍历 × 3<br><br>
+<strong>🟢 P3 - 低优先级</strong><br>
+• 信息泄露 × 23`
+                },
+                'report': {
+                    user: '生成安全报告',
+                    response: '📄 正在生成完整安全评估报告...<br><br>报告将包含：<br>• 执行摘要<br>• 漏洞详情<br>• 风险评估<br>• 修复建议<br>• 合规检查<br><br>预计生成时间：30秒'
+                }
+            };
+
+            const action = actions[type];
+            if (action) {
+                addAiMessage(action.user, action.response);
+            }
+        }
+
+        // 重写 sendAiMessage 以适配本页面
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const messagesDiv = document.getElementById('aiMessages');
+            if (!input || !messagesDiv) return;
+            
+            const text = input.value.trim();
+            if (!text) return;
+            
+            // 添加用户消息
+            const userMsg = document.createElement('div');
+            userMsg.className = 'ai-message user';
+            userMsg.textContent = text;
+            messagesDiv.appendChild(userMsg);
+            
+            // 模拟AI回复
+            setTimeout(() => {
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'ai-message assistant';
+                aiMsg.innerHTML = generateAiResponse(text);
+                messagesDiv.appendChild(aiMsg);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 500);
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            input.value = '';
+        }
+
+        // 生成AI回复
+        function generateAiResponse(message) {
+            const msg = message.toLowerCase();
+            
+            if (msg.includes('修复') || msg.includes('fix')) {
+                return '根据漏洞分析，建议优先修复 SQL注入 和 RCE 漏洞，这两个漏洞可能导致服务器完全沦陷。具体修复方案已在各漏洞详情中的 AI 分析建议中给出。';
+            }
+            if (msg.includes('优先') || msg.includes('priority')) {
+                return '漏洞修复优先级建议：<br>1. SQL注入（CVSS 9.8）<br>2. RCE远程代码执行（CVSS 9.1）<br>3. API未授权访问<br>4. 其他中低危漏洞';
+            }
+            if (msg.includes('报告') || msg.includes('report')) {
+                return '我可以帮你生成多种格式的安全报告：<br>• HTML 在线报告<br>• PDF 正式报告<br>• Markdown 技术文档<br><br>请点击上方"导出报告"按钮选择格式。';
+            }
+            
+            return `我理解你想了解「${escapeHtml(message)}」相关内容。<br><br>你可以尝试：<br>• 点击快捷按钮获取分析<br>• 询问具体漏洞的修复方案<br>• 请求生成安全报告`;
+        }
+        
+        // 搜索漏洞功能
+        function searchVulnerabilities() {
+            const searchInput = document.getElementById('floatingVulnSearch') || document.getElementById('vulnSearch');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            if (!searchTerm) {
+                // 如果搜索框为空，显示所有漏洞
+                showAllVulnerabilities();
+                return;
+            }
+            
+            // 隐藏所有漏洞
+            document.querySelectorAll('.vuln-item').forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            // 隐藏所有网站卡片
+            document.querySelectorAll('.site-card').forEach(card => {
+                card.style.display = 'none';
+            });
+            
+            // 隐藏所有子域名
+            document.querySelectorAll('.subdomain-item').forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            // 搜索并显示匹配的漏洞
+            document.querySelectorAll('.vuln-item').forEach(item => {
+                const title = item.querySelector('.vuln-item-title')?.textContent.toLowerCase() || '';
+                const desc = item.querySelector('.vuln-item-desc')?.textContent.toLowerCase() || '';
+                const meta = item.querySelector('.vuln-item-meta')?.textContent.toLowerCase() || '';
+                
+                if (title.includes(searchTerm) || desc.includes(searchTerm) || meta.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    
+                    // 显示漏洞所在的网站
+                    let parent = item.closest('.site-card');
+                    if (parent) {
+                        parent.style.display = 'block';
+                        parent.classList.add('expanded'); // 展开卡片
+                    }
+                    
+                    // 显示漏洞所在的子域名（如果存在）
+                    parent = item.closest('.subdomain-item');
+                    if (parent) {
+                        parent.style.display = 'block';
+                        parent.closest('.subdomain-section')?.classList.add('expanded');
+                    }
+                }
+            });
+            
+            // 搜索并显示匹配的网站
+            document.querySelectorAll('.site-info').forEach(info => {
+                const url = info.querySelector('.site-url a')?.textContent.toLowerCase() || '';
+                const meta = info.querySelector('.site-meta')?.textContent.toLowerCase() || '';
+                
+                if (url.includes(searchTerm) || meta.includes(searchTerm)) {
+                    let parent = info.closest('.site-card');
+                    if (parent) {
+                        parent.style.display = 'block';
+                        parent.classList.add('expanded'); // 展开卡片
+                    }
+                }
+            });
+            
+            // 搜索并显示匹配的子域名
+            document.querySelectorAll('.subdomain-item-url').forEach(urlElement => {
+                const url = urlElement.querySelector('a')?.textContent.toLowerCase() || '';
+                
+                if (url.includes(searchTerm)) {
+                    let parent = urlElement.closest('.subdomain-item');
+                    if (parent) {
+                        parent.style.display = 'block';
+                        const subSection = parent.closest('.subdomain-section');
+                        if (subSection) subSection.classList.add('expanded');
+                        const siteCard = parent.closest('.site-card');
+                        if (siteCard) siteCard.style.display = 'block';
+                    }
+                }
+            });
+        }
+        
+        // 显示所有漏洞
+        function showAllVulnerabilities() {
+            document.querySelectorAll('.vuln-item, .site-card, .subdomain-item').forEach(item => {
+                item.style.display = '';
+            });
+        }
+        
+        // 为搜索框添加回车键支持和实时搜索
+        document.getElementById('floatingVulnSearch')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchVulnerabilities();
+            }
+        });
+        
+        // 实时搜索（当用户输入时自动搜索）
+        document.getElementById('floatingVulnSearch')?.addEventListener('input', function() {
+            // 使用防抖功能，避免频繁搜索
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                searchVulnerabilities();
+            }, 300);
+        });
+        
+        // 分析单个漏洞
+        function analyzeVulnerability(vulnTitle, button) {
+            // 添加AI消息到对话面板
+            const message = `分析漏洞: ${vulnTitle}`;
+            addAiMessage(message, `🤖 正在对漏洞「${vulnTitle}」进行深度分析...`);
+            
+            // 模拟AI分析过程
+            setTimeout(() => {
+                // 根据漏洞类型生成不同的分析结果
+                let analysisResult = '';
+                if (vulnTitle.includes('SQL')) {
+                    analysisResult = `🔍 <strong>SQL注入漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>高危<br>
+                    <strong>影响范围：</strong>数据库完整权限可能被获取<br>
+                    <strong>修复建议：</strong><br>
+                    1. 使用参数化查询或预编译语句<br>
+                    2. 对用户输入进行严格的验证和过滤<br>
+                    3. 限制数据库账户权限<br>
+                    4. 部署WAF规则拦截SQL注入攻击<br><br>
+                    <strong>修复优先级：</strong>立即处理 (P0)`;
+                } else if (vulnTitle.includes('RCE') || vulnTitle.includes('代码执行')) {
+                    analysisResult = `🔍 <strong>远程代码执行漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>高危<br>
+                    <strong>影响范围：</strong>服务器完全控制权可能被获取<br>
+                    <strong>修复建议：</strong><br>
+                    1. 限制后台访问IP白名单<br>
+                    2. 修改默认后台路径<br>
+                    3. 禁用模板在线编辑功能<br>
+                    4. 启用文件上传限制<br><br>
+                    <strong>修复优先级：</strong>24小时内处理 (P0)`;
+                } else if (vulnTitle.includes('XSS')) {
+                    analysisResult = `🔍 <strong>XSS跨站脚本漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>中危<br>
+                    <strong>影响范围：</strong>用户会话可能被劫持<br>
+                    <strong>修复建议：</strong><br>
+                    1. 对输出内容进行HTML编码<br>
+                    2. 设置HTTPOnly Cookie<br>
+                    3. 实施内容安全策略(CSP)<br>
+                    4. 输入过滤和验证<br><br>
+                    <strong>修复优先级：</strong>一周内处理 (P2)`;
+                } else if (vulnTitle.includes('弱口令')) {
+                    analysisResult = `🔍 <strong>弱口令漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>中危<br>
+                    <strong>影响范围：</strong>后台权限可能被获取<br>
+                    <strong>修复建议：</strong><br>
+                    1. 强制修改默认口令<br>
+                    2. 实施强密码策略<br>
+                    3. 启用账户锁定机制<br>
+                    4. 启用双因素认证<br><br>
+                    <strong>修复优先级：</strong>一周内处理 (P1)`;
+                } else if (vulnTitle.includes('未授权访问')) {
+                    analysisResult = `🔍 <strong>未授权访问漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>高危<br>
+                    <strong>影响范围：</strong>敏感数据可能被直接访问<br>
+                    <strong>修复建议：</strong><br>
+                    1. 实施身份验证机制<br>
+                    2. 添加权限控制检查<br>
+                    3. 验证用户会话状态<br>
+                    4. 实施访问日志记录<br><br>
+                    <strong>修复优先级：</strong>24小时内处理 (P0)`;
+                } else if (vulnTitle.includes('目录遍历')) {
+                    analysisResult = `🔍 <strong>目录遍历漏洞分析</strong><br><br>
+                    <strong>风险等级：</strong>中危<br>
+                    <strong>影响范围：</strong>服务器敏感文件可能被读取<br>
+                    <strong>修复建议：</strong><br>
+                    1. 验证和过滤文件路径参数<br>
+                    2. 实施路径白名单机制<br>
+                    3. 禁止访问敏感目录<br>
+                    4. 实施文件访问权限控制<br><br>
+                    <strong>修复优先级：</strong>一周内处理 (P2)`;
+                } else {
+                    analysisResult = `🔍 <strong>漏洞分析结果</strong><br><br>
+                    <strong>风险等级：</strong>需进一步评估<br>
+                    <strong>影响范围：</strong>根据具体利用方式而定<br>
+                    <strong>修复建议：</strong><br>
+                    1. 详细分析漏洞成因<br>
+                    2. 评估漏洞利用难度<br>
+                    3. 制定针对性修复方案<br>
+                    4. 修复后进行回归测试<br><br>
+                    <strong>修复优先级：</strong>根据业务影响确定`;
+                }
+                
+                addAiMessage(null, analysisResult);
+            }, 1000);
+            
+            // 按钮点击反馈
+            const originalText = button.innerHTML;
+            button.innerHTML = '分析中...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
+        }
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('[DEBUG] DOMContentLoaded 触发');
+            console.log('[DEBUG] XHLayout:', typeof XHLayout, XHLayout);
+            
+            if (typeof XHLayout === 'undefined') {
+                console.error('[ERROR] XHLayout 未定义，layout.js 可能加载失败');
+                return;
+            }
+            
+            // 加载导航栏组件（子目录页面需要 basePath）
+            try {
+                const navbar = await XHLayout.loadNavbar({
+                    activeTab: 'vuln-analysis',
+                    basePath: '../'
+                });
+                console.log('[DEBUG] loadNavbar 结果:', navbar);
+            } catch (e) {
+                console.error('[ERROR] loadNavbar 失败:', e);
+            }
+            
+            // 加载浮动导航组件（带搜索框）
+            try {
+                const floatingNav = await XHLayout.loadFloatingNav({
+                    title: '漏洞分析仪表盘',
+                    activePage: 'vuln-analysis',
+                    basePath: '../',
+                    extraHtml: XHLayout.FLOATING_NAV_SEARCH_HTML
+                });
+                console.log('[DEBUG] loadFloatingNav 结果:', floatingNav);
+            } catch (e) {
+                console.error('[ERROR] loadFloatingNav 失败:', e);
+            }
+            
+            // 加载底部版权
+            XHLayout.loadFooter();
+        });
+    </script>
+</body>
+</html>

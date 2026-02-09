@@ -1,0 +1,40 @@
+<!-- XHSecTeam AI安全助手面板组件 -->
+<!-- 使用方式: 在页面中放置 <div class="ai-panel" id="aiPanel"></div>，然后调用 loadAiPanel(config) -->
+
+<div class="ai-panel" id="aiPanel">
+    <div class="ai-header">
+        <div class="ai-title">AI 安全助手</div>
+    </div>
+    <!-- 快捷按钮区域，由各页面配置 -->
+    <div class="ai-shortcuts" id="aiShortcuts"></div>
+    <div class="ai-body" id="aiMessages">
+        <div class="ai-message assistant" id="aiInitialMessage">
+            你好！我是 AI 安全助手，可以帮你：<br>
+            • 自动执行扫描任务<br>
+            • 分析漏洞检测结果<br>
+            • 解答安全相关问题<br><br>
+            请问有什么可以帮助你的？
+        </div>
+    </div>
+    <div class="ai-footer">
+        <!-- 工具按钮区域，由各页面配置 -->
+        <div class="ai-tools" id="aiTools"></div>
+        <div id="uploadStatus" class="upload-status" style="display: none;"></div>
+        <div class="ai-input-wrap">
+            <div id="normalInput" style="display: flex; width: 100%; gap: 8px; align-items: flex-end;">
+                <textarea class="ai-input" id="aiInput" rows="1" placeholder="输入问题或指令..." oninput="autoResize(this)"></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+            <!-- 扫描确认状态，maccmsBAI 页面专用 -->
+            <div id="scanConfirmMode" class="scan-confirm-prompt" style="display: none; width: 100%;">
+                <div class="prompt-text" style="flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary);">是否根据文件内域名进行扫描？</div>
+                <div class="prompt-actions" style="display: flex; gap: 8px;">
+                    <button class="prompt-btn no" style="height: 36px; padding: 0 16px; min-width: 60px;" onclick="handleScanConfirm(false)">NO</button>
+                    <button class="prompt-btn yes" style="height: 36px; padding: 0 16px; min-width: 60px;" onclick="handleScanConfirm(true)">YES</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

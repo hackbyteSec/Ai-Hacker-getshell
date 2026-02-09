@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动GetShell - XHSecTeam</title>
+    <link rel="stylesheet" href="../static/css/common.css">
+    <script src="../static/css/common.js"></script>
+    <script src="../static/js/layout.js"></script>
+    <style>
+        /* 页面特有样式 */
+        .page-title {
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+        .page-title h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-title h1 .title-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .page-title p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+        }
+
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .stat-card-value.danger { color: #ef4444; }
+        .stat-card-value.warning { color: #f59e0b; }
+        .stat-card-value.success { color: #10b981; }
+        .stat-card-value.info { color: #3b82f6; }
+        .stat-card-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* 漏洞列表 */
+        .vuln-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+            flex: 1;
+        }
+        .vuln-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(255, 255, 255, 0.6));
+        }
+        .vuln-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vuln-section-title .count-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .vuln-section-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .vuln-action-btn {
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .vuln-action-btn:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+            background: #fff;
+        }
+        .vuln-action-btn.primary {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: transparent;
+            color: #fff;
+        }
+        .vuln-action-btn.primary:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
+        /* 漏洞列表内容 */
+        .vuln-list {
+            /* 不限制高度，显示全部 */
+        }
+        
+        /* 隐藏AI对话滚动条 */
+        .ai-body {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .ai-body::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Opera */
+        }
+        .vuln-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            transition: background 0.2s;
+        }
+        .vuln-item:hover {
+            background: rgba(248, 250, 252, 0.8);
+        }
+        .vuln-item:last-child {
+            border-bottom: none;
+        }
+        .vuln-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: #ef4444;
+            cursor: pointer;
+        }
+        .vuln-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .vuln-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .vuln-severity {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .vuln-severity.critical {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+        .vuln-severity.high {
+            background: rgba(249, 115, 22, 0.15);
+            color: #ea580c;
+        }
+        .vuln-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .vuln-target {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            margin-bottom: 6px;
+            word-break: break-all;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .vuln-target:hover {
+            color: var(--accent-blue);
+            text-decoration: underline;
+        }
+        .vuln-desc {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+        }
+        .vuln-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .vuln-meta-item {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .vuln-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .vuln-exec-btn {
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .vuln-exec-btn.shell {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+        .vuln-exec-btn.shell:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+        }
+        .vuln-exec-btn.verify {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .vuln-exec-btn.verify:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        .vuln-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-align: center;
+        }
+        .vuln-status.pending {
+            background: rgba(148, 163, 184, 0.15);
+            color: #64748b;
+        }
+        .vuln-status.running {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+        .vuln-status.success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+        .vuln-status.failed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .empty-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--text-tertiary);
+            fill: none;
+            stroke-width: 1.5;
+        }
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .empty-hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* 分页控件 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 6px;
+        }
+        .pagination-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover {
+            border-color: rgba(148, 163, 184, 0.4);
+            background: #fff;
+        }
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: transparent;
+            color: #fff;
+        }
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1100px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* AI 消息图标 - Mac风格 */
+        .ai-message.assistant {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            margin-bottom: 12px;
+        }
+        .ai-message.user {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            margin-left: 32px;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+        .ai-icon {
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0;
+        }
+        .ai-icon.success { background: rgba(34, 197, 94, 0.15); }
+        .ai-icon.warning { background: rgba(245, 158, 11, 0.15); }
+        .ai-icon.error { background: rgba(239, 68, 68, 0.15); }
+        .ai-icon.info { background: rgba(59, 130, 246, 0.15); }
+        .ai-icon.exploit { background: rgba(245, 158, 11, 0.15); }
+        .ai-icon.shell { background: rgba(99, 102, 241, 0.15); }
+        .ai-icon.target { background: rgba(139, 92, 246, 0.15); }
+        .ai-icon.loading { background: rgba(100, 116, 139, 0.15); }
+        .ai-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+        .ai-text {
+            flex: 1;
+            line-height: 1.65;
+            font-size: 13px;
+            color: #334155;
+        }
+        .ai-text strong {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .ai-text code {
+            background: rgba(59, 130, 246, 0.08);
+            color: #3b82f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 12px;
+        }
+        .ai-text a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .ai-text a:hover {
+            text-decoration: underline;
+        }
+        
+        /* AI输入框样式 */
+        .ai-input {
+            height: 40px !important;
+            min-height: 40px !important;
+            max-height: 300px !important;
+            overflow-y: hidden;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            resize: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            transition: height 0.1s ease;
+        }
+        .ai-input::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 左侧导航栏 -->
+    <nav class="navbar" id="navbar"></nav>
+
+    <!-- 主布局 -->
+    <div class="main-layout" id="mainLayout">
+        <!-- 主内容区 -->
+        <main class="content">
+            <!-- 页面标题 -->
+            <div class="page-title">
+                <h1>
+                    自动GetShell
+                    <span class="title-badge">EXPLOIT</span>
+                </h1>
+                <p>Auto Exploitation & Shell Access - 基于高危漏洞自动化利用</p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card-value danger" id="criticalCount">0</div>
+                    <div class="stat-card-label">可GetShell漏洞</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value warning" id="highCount">0</div>
+                    <div class="stat-card-label">高危漏洞</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value success" id="successCount">0</div>
+                    <div class="stat-card-label">已成功利用</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-value info" id="pendingCount">0</div>
+                    <div class="stat-card-label">待执行</div>
+                </div>
+            </div>
+
+            <!-- 漏洞列表 -->
+            <div class="vuln-section">
+                <div class="vuln-section-header">
+                    <div class="vuln-section-title">
+                        可利用漏洞列表
+                        <span class="count-badge" id="vulnCountBadge">0</span>
+                    </div>
+                    <div class="vuln-section-actions">
+                        <button class="vuln-action-btn" onclick="refreshVulnList()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            刷新日志
+                        </button>
+                        <button class="vuln-action-btn" onclick="selectAll()">全选</button>
+                        <button class="vuln-action-btn primary" onclick="executeSelected()">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            批量执行
+                        </button>
+                    </div>
+                </div>
+                <div class="vuln-list" id="vulnList">
+                    <!-- 漏洞列表由JS动态生成 -->
+                </div>
+                <div class="pagination" id="pagination">
+                    <!-- 分页控件由JS动态生成 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 右侧 AI 面板 -->
+    <aside class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <span class="ai-title">AI 漏洞利用助手</span>
+        </div>
+        <div class="ai-shortcuts">
+            <span class="ai-shortcut" data-action="scan-high">扫描高危</span>
+            <span class="ai-shortcut" data-action="auto-exploit">自动利用</span>
+            <span class="ai-shortcut" data-action="check-shell">检测Shell</span>
+            <span class="ai-shortcut" data-action="clean-trace">清理痕迹</span>
+        </div>
+        <div class="ai-body" id="aiBody">
+                <div class="ai-message assistant">
+                    <div class="ai-icon info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+                    </div>
+                    <div class="ai-text">
+                        <strong>欢迎使用自动GetShell系统！</strong>
+                        <br><br>
+                        本系统将自动分析扫描日志中的高危漏洞，识别可直接获取Shell的目标。
+                        <br><br>
+                        <strong>支持的漏洞类型：</strong><br>
+                        • RCE（远程代码执行）<br>
+                        • 文件上传漏洞<br>
+                        • 反序列化漏洞<br>
+                        • SQL注入（可写Shell）<br>
+                        • 命令注入漏洞
+                        <br><br>
+                        <span style="color: #ef4444;">警告：</span>请确保已获得授权后再执行利用操作！
+                    </div>
+                </div>
+        </div>
+        <div class="ai-footer">
+            <div class="ai-tools">
+                <button class="tool-btn" onclick="loadFromLogs()">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    从日志加载
+                </button>
+                <button class="tool-btn" onclick="autoExploit()">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    自动利用
+                </button>
+                <button class="tool-btn" onclick="showShells()">
+                    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Shell管理
+                </button>
+            </div>
+            <div class="ai-input-wrap">
+                <textarea class="ai-input" id="aiInput" placeholder="输入命令或询问AI助手..." rows="1"></textarea>
+                <button class="ai-send" onclick="sendAiMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 加载导航栏
+            await XHLayout.loadNavbar({
+                activeTab: 'getshell',
+                basePath: '../'
+            });
+            
+            // 加载底部版权
+            XHLayout.loadFooter();
+            
+            // 初始化漏洞列表
+            loadFromLogs();
+            
+            // 绑定快捷标签
+            document.querySelectorAll('.ai-shortcut').forEach(el => {
+                el.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    handleShortcutAction(action);
+                });
+            });
+            
+            // AI输入框回车
+            const aiInput = document.getElementById('aiInput');
+            aiInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendAiMessage();
+                }
+            });
+            
+            // 输入框自动调整高度
+            aiInput.addEventListener('input', function() {
+                this.style.height = '40px';
+                const newHeight = Math.min(this.scrollHeight, 300);
+                this.style.height = newHeight + 'px';
+                this.style.overflowY = newHeight >= 300 ? 'auto' : 'hidden';
+            });
+        });
+
+        // 模拟漏洞数据（实际应从logs.html获取）
+        let vulnData = [];
+        
+        // 分页相关变量
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        
+        // 从日志加载漏洞
+        function loadFromLogs() {
+            addAiMessage('assistant', '正在从扫描日志中加载高危漏洞...', 'loading');
+            
+            // 模拟从localStorage或API获取日志数据
+            setTimeout(() => {
+                // 模拟数据
+                vulnData = [
+                    {
+                        id: 1,
+                        severity: 'critical',
+                        name: 'ThinkPHP 5.x RCE',
+                        target: 'http://example.com/index.php',
+                        desc: '远程代码执行漏洞，可直接获取WebShell',
+                        type: 'RCE',
+                        time: '2024-12-24 10:30:25',
+                        status: 'pending'
+                    },
+                    {
+                        id: 2,
+                        severity: 'critical',
+                        name: '任意文件上传',
+                        target: 'http://target.com/upload.php',
+                        desc: '未限制上传文件类型，可上传PHP木马',
+                        type: 'Upload',
+                        time: '2024-12-24 10:28:15',
+                        status: 'pending'
+                    },
+                    {
+                        id: 3,
+                        severity: 'high',
+                        name: 'Fastjson反序列化RCE',
+                        target: 'http://api.example.com/json',
+                        desc: 'Fastjson 1.2.47以下版本反序列化漏洞',
+                        type: 'Deserialization',
+                        time: '2024-12-24 10:25:00',
+                        status: 'pending'
+                    },
+                    {
+                        id: 4,
+                        severity: 'high',
+                        name: 'SQL注入（可写文件）',
+                        target: 'http://vuln.site/news.php?id=1',
+                        desc: 'MySQL注入点，具有FILE权限可写入WebShell',
+                        type: 'SQLi',
+                        time: '2024-12-24 10:20:00',
+                        status: 'pending'
+                    },
+                    {
+                        id: 5,
+                        severity: 'critical',
+                        name: 'Struts2 S2-016 RCE',
+                        target: 'http://webapp.example.org/action.do',
+                        desc: 'Struts2框架远程代码执行漏洞',
+                        type: 'RCE',
+                        time: '2024-12-24 09:45:10',
+                        status: 'pending'
+                    },
+                    {
+                        id: 6,
+                        severity: 'critical',
+                        name: 'Spring Boot Actuator敏感信息泄露',
+                        target: 'http://spring.example.com/actuator',
+                        desc: '未授权访问敏感端点，可能导致RCE',
+                        type: 'InfoDisclosure',
+                        time: '2024-12-24 09:30:45',
+                        status: 'pending'
+                    },
+                    {
+                        id: 7,
+                        severity: 'high',
+                        name: 'Log4j2 JNDI RCE (CVE-2021-44228)',
+                        target: 'http://log.example.com/api/submit',
+                        desc: 'Log4j2组件JNDI注入漏洞',
+                        type: 'RCE',
+                        time: '2024-12-24 09:15:20',
+                        status: 'pending'
+                    },
+                    {
+                        id: 8,
+                        severity: 'critical',
+                        name: 'Nginx配置错误导致路径穿越',
+                        target: 'http://nginx.example.com/files/',
+                        desc: '错误的alias配置导致路径穿越漏洞',
+                        type: 'PathTraversal',
+                        time: '2024-12-24 09:00:30',
+                        status: 'pending'
+                    },
+                    {
+                        id: 9,
+                        severity: 'high',
+                        name: 'Shiro 1.2.4 反序列化RCE',
+                        target: 'http://shiro.example.com/login',
+                        desc: 'Apache Shiro框架反序列化漏洞',
+                        type: 'Deserialization',
+                        time: '2024-12-24 08:45:15',
+                        status: 'pending'
+                    },
+                    {
+                        id: 10,
+                        severity: 'critical',
+                        name: 'Jenkins未授权RCE',
+                        target: 'http://jenkins.example.com/script',
+                        desc: '未授权访问Jenkins脚本控制台',
+                        type: 'RCE',
+                        time: '2024-12-24 08:30:50',
+                        status: 'pending'
+                    },
+                    {
+                        id: 11,
+                        severity: 'critical',
+                        name: 'Drupalgeddon2 SQLi (CVE-2018-7600)',
+                        target: 'http://drupal.example.com/user',
+                        desc: 'Drupal核心SQL注入漏洞',
+                        type: 'SQLi',
+                        time: '2024-12-24 08:15:25',
+                        status: 'pending'
+                    },
+                    {
+                        id: 12,
+                        severity: 'high',
+                        name: 'Redis未授权访问',
+                        target: 'http://redis.example.com:6379',
+                        desc: 'Redis服务未设置访问密码',
+                        type: 'Misconfig',
+                        time: '2024-12-24 08:00:10',
+                        status: 'pending'
+                    }
+                ];
+                
+                updateStats();
+                renderVulnList(currentPage);
+                currentPage = 1;
+                addAiMessage('assistant', '已加载 <strong>' + vulnData.length + '</strong> 个可利用漏洞！<br><br>其中：<br>• 可直接GetShell: ' + vulnData.filter(v => v.severity === 'critical').length + ' 个<br>• 高危漏洞: ' + vulnData.filter(v => v.severity === 'high').length + ' 个<br><br>选择目标后点击"执行"开始利用。', 'success');
+            }, 1000);
+        }
+        
+        // 渲染漏洞列表
+        function renderVulnList(page = 1) {
+            const container = document.getElementById('vulnList');
+            
+            if (vulnData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <div class="empty-text">暂无可利用的高危漏洞</div>
+                        <div class="empty-hint">请先运行漏洞扫描，检测到高危漏洞后将自动显示在此处</div>
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // 计算当前页的数据
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = vulnData.slice(startIndex, endIndex);
+            
+            container.innerHTML = pageData.map(v => `
+                <div class="vuln-item" data-id="${v.id}">
+                    <input type="checkbox" class="vuln-checkbox" ${v.status === 'success' ? 'disabled' : ''} ${v.selected ? 'checked' : ''} onchange="updateVulnSelection(${v.id}, this.checked)">
+                    <div class="vuln-info">
+                        <div class="vuln-header">
+                            <span class="vuln-severity ${v.severity}">${v.severity === 'critical' ? '可GetShell' : '高危'}</span>
+                            <span class="vuln-name">${v.name}</span>
+                        </div>
+                        <div class="vuln-target" onclick="openTarget('${v.target}')">${v.target}</div>
+                        <div class="vuln-desc">${v.desc}</div>
+                        <div class="vuln-meta">
+                            <span class="vuln-meta-item">类型: ${v.type}</span>
+                            <span class="vuln-meta-item">发现时间: ${v.time}</span>
+                        </div>
+                    </div>
+                    <div class="vuln-actions">
+                        ${v.status === 'pending' ? `
+                            <button class="vuln-exec-btn shell" onclick="executeVuln(${v.id})">GetShell</button>
+                            <button class="vuln-exec-btn verify" onclick="verifyVuln(${v.id})">验证</button>
+                        ` : v.status === 'running' ? `
+                            <span class="vuln-status running">执行中...</span>
+                        ` : v.status === 'success' ? `
+                            <span class="vuln-status success">已成功</span>
+                            <button class="vuln-exec-btn verify" onclick="manageShell(${v.id})">管理</button>
+                        ` : `
+                            <span class="vuln-status failed">失败</span>
+                            <button class="vuln-exec-btn verify" onclick="executeVuln(${v.id})">重试</button>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('vulnCountBadge').textContent = vulnData.length;
+            
+            // 渲染分页控件
+            renderPagination(page);
+        }
+        
+        // 更新统计
+        function updateStats() {
+            document.getElementById('criticalCount').textContent = vulnData.filter(v => v.severity === 'critical').length;
+            document.getElementById('highCount').textContent = vulnData.filter(v => v.severity === 'high').length;
+            document.getElementById('successCount').textContent = vulnData.filter(v => v.status === 'success').length;
+            document.getElementById('pendingCount').textContent = vulnData.filter(v => v.status === 'pending').length;
+        }
+        
+        // 渲染分页控件
+        function renderPagination(page) {
+            const paginationContainer = document.getElementById('pagination');
+            
+            if (vulnData.length <= itemsPerPage) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            const totalPages = Math.ceil(vulnData.length / itemsPerPage);
+            
+            // 生成分页按钮
+            let paginationHTML = '';
+            
+            // 上一页按钮
+            paginationHTML += `<button class="pagination-btn ${page === 1 ? 'disabled' : ''}" onclick="changePage(${page - 1})" ${page === 1 ? 'disabled' : ''}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>`;
+            
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                if (totalPages <= 7) {
+                    // 如果总页数不超过7页，显示所有页码
+                    paginationHTML += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else {
+                    // 如果总页数超过7页，显示省略号
+                    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+                        // 显示第一页、最后一页和当前页附近的页码
+                        paginationHTML += `<button class="pagination-btn ${i === page ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                    } else if (i === 2 || i === totalPages - 1) {
+                        // 显示第二页和倒数第二页
+                        paginationHTML += `<button class="pagination-btn" onclick="changePage(${i})">${i}</button>`;
+                    } else if ((i === page - 2 && page > 3) || (i === page + 2 && page < totalPages - 2)) {
+                        // 在当前页附近显示省略号
+                        paginationHTML += `<span class="pagination-btn disabled">...</span>`;
+                    }
+                }
+            }
+            
+            // 下一页按钮
+            paginationHTML += `<button class="pagination-btn ${page === totalPages ? 'disabled' : ''}" onclick="changePage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>`;
+            
+            paginationContainer.innerHTML = paginationHTML;
+        }
+        
+        // 切换页面
+        function changePage(page) {
+            const totalPages = Math.ceil(vulnData.length / itemsPerPage);
+            
+            // 验证页码范围
+            if (page < 1 || page > totalPages) {
+                return;
+            }
+            
+            currentPage = page;
+            renderVulnList(currentPage);
+        }
+        
+        // 执行单个漏洞利用
+        function executeVuln(id) {
+            const vuln = vulnData.find(v => v.id === id);
+            if (!vuln) return;
+            
+            vuln.status = 'running';
+            renderVulnList(currentPage);
+            addAiMessage('assistant', '正在对 <strong>' + vuln.name + '</strong> 执行利用...<br>目标: <code>' + vuln.target + '</code>', 'exploit');
+            
+            // 模拟执行
+            setTimeout(() => {
+                vuln.status = Math.random() > 0.3 ? 'success' : 'failed';
+                updateStats();
+                renderVulnList(currentPage);
+                
+                if (vuln.status === 'success') {
+                    addAiMessage('assistant', '<strong>GetShell成功！</strong><br><br>目标: ' + vuln.target + '<br>Shell路径: /uploads/shell_' + Date.now() + '.php<br>连接密码: xhsec123<br><br>点击"Shell管理"查看所有已获取的Shell。', 'success');
+                } else {
+                    addAiMessage('assistant', '利用失败: ' + vuln.name + '<br>可能原因: 目标已修复或网络不可达<br><br>建议手动验证漏洞是否仍然存在。', 'error');
+                }
+            }, 2000 + Math.random() * 2000);
+        }
+        
+        // 验证漏洞
+        function verifyVuln(id) {
+            const vuln = vulnData.find(v => v.id === id);
+            if (!vuln) return;
+            addAiMessage('assistant', '正在验证漏洞: ' + vuln.name + '...', 'target');
+            setTimeout(() => {
+                addAiMessage('assistant', '漏洞验证成功！目标仍然存在该漏洞，可以执行利用。', 'success');
+            }, 1500);
+        }
+        
+        // 管理Shell
+        function manageShell(id) {
+            addAiMessage('assistant', '正在跳转到Shell管理页面...', 'shell');
+            setTimeout(() => {
+                window.location.href = 'shell-manager.html';
+            }, 500);
+        }
+        
+        // 打开目标链接
+        function openTarget(url) {
+            // 验证URL格式
+            let formattedUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                formattedUrl = 'http://' + url;
+            }
+            
+            try {
+                window.open(formattedUrl, '_blank');
+                addAiMessage('assistant', '已在新标签页打开: <a href="' + formattedUrl + '" target="_blank">' + url + '</a>', 'target');
+            } catch (e) {
+                addAiMessage('assistant', '无法打开链接: ' + url + '<br>请检查URL格式是否正确。', 'error');
+            }
+        }
+        
+        // 全选
+        function selectAll() {
+            // 检查当前是否所有可选项目都已选中
+            const allSelectable = vulnData.filter(v => v.status !== 'success');
+            const allSelected = allSelectable.length > 0 && allSelectable.every(v => v.selected);
+            
+            // 如果所有可选项目都已选中，则取消全选；否则全选
+            vulnData.forEach(vuln => {
+                if (vuln.status !== 'success') {
+                    vuln.selected = !allSelected;
+                }
+            });
+            renderVulnList(currentPage);
+        }
+        
+        // 批量执行
+        function executeSelected() {
+            const selected = [];
+            
+            // 从所有漏洞数据中找出被选中的项
+            vulnData.forEach(vuln => {
+                if (vuln.selected && vuln.status === 'pending') {
+                    selected.push(vuln.id);
+                }
+            });
+            
+            if (selected.length === 0) {
+                addAiMessage('assistant', '请先选择要执行的漏洞目标！', 'warning');
+                return;
+            }
+            
+            addAiMessage('assistant', '开始批量执行 ' + selected.length + ' 个漏洞利用...', 'exploit');
+            selected.forEach((id, index) => {
+                setTimeout(() => executeVuln(id), index * 3000);
+            });
+        }
+        
+        // 刷新列表
+        function refreshVulnList() {
+            loadFromLogs();
+        }
+        
+        // 自动利用所有
+        function autoExploit() {
+            const pending = vulnData.filter(v => v.status === 'pending');
+            if (pending.length === 0) {
+                addAiMessage('assistant', '没有待执行的漏洞目标。', 'warning');
+                return;
+            }
+            addAiMessage('assistant', '启动自动利用模式，将依次执行 ' + pending.length + ' 个目标...', 'exploit');
+            pending.forEach((v, i) => {
+                setTimeout(() => executeVuln(v.id), i * 3000);
+            });
+        }
+        
+        // 显示Shell管理
+        function showShells() {
+            const shells = vulnData.filter(v => v.status === 'success');
+            if (shells.length === 0) {
+                addAiMessage('assistant', '暂无已获取的Shell。执行漏洞利用成功后将在此显示。', 'info');
+            } else {
+                addAiMessage('assistant', '<strong>已获取的Shell (' + shells.length + '个)：</strong><br><br>' + 
+                    shells.map(s => '• ' + s.target).join('<br>') + '<br><br><a href="shell-manager.html" style="color:#6366f1;font-weight:600;">→ 打开Shell管理页面</a>', 'shell');
+            }
+        }
+        
+        // 快捷操作
+        function handleShortcutAction(action) {
+            switch(action) {
+                case 'scan-high': loadFromLogs(); break;
+                case 'auto-exploit': autoExploit(); break;
+                case 'check-shell': showShells(); break;
+                case 'clean-trace': addAiMessage('assistant', '清理痕迹功能开发中...', 'info'); break;
+            }
+        }
+        
+        // AI消息 - Mac风格图标
+        function addAiMessage(type, content, iconType = 'default') {
+            const body = document.getElementById('aiBody');
+            const msg = document.createElement('div');
+            msg.className = `ai-message ${type}`;
+            
+            // Mac风格简洁图标
+            const icons = {
+                success: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>',
+                    cls: 'success'
+                },
+                warning: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/></svg>',
+                    cls: 'warning'
+                },
+                error: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+                    cls: 'error'
+                },
+                info: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>',
+                    cls: 'info'
+                },
+                shell: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l3 3-3 3"/><path d="M13 15h4"/></svg>',
+                    cls: 'shell'
+                },
+                target: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
+                    cls: 'target'
+                },
+                exploit: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+                    cls: 'exploit'
+                },
+                loading: {
+                    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4m-7-10H2m20 0h-3m-2.93-6.36l-2.12 2.12m-5.9 5.9l-2.12 2.12m12.02 0l-2.12-2.12m-5.9-5.9L7.81 5.64"/></svg>',
+                    cls: 'loading'
+                }
+            };
+            
+            // 智能图标选择
+            if (iconType === 'default') {
+                if (content.includes('成功') || content.includes('完成') || content.includes('已加载')) {
+                    iconType = 'success';
+                } else if (content.includes('失败') || content.includes('错误') || content.includes('无法')) {
+                    iconType = 'error';
+                } else if (content.includes('请先') || content.includes('警告')) {
+                    iconType = 'warning';
+                } else if (content.includes('验证') || content.includes('检测') || content.includes('打开')) {
+                    iconType = 'target';
+                } else if (content.includes('执行') || content.includes('利用') || content.includes('开始') || content.includes('正在')) {
+                    iconType = 'exploit';
+                } else if (content.includes('Shell') || content.includes('管理') || content.includes('面板')) {
+                    iconType = 'shell';
+                } else if (content.includes('加载') || content.includes('...')) {
+                    iconType = 'loading';
+                } else {
+                    iconType = 'info';
+                }
+            }
+            
+            const iconData = icons[iconType] || icons.info;
+            
+            if (type === 'assistant') {
+                msg.innerHTML = `
+                    <div class="ai-icon ${iconData.cls}">
+                        ${iconData.svg}
+                    </div>
+                    <div class="ai-text">${content}</div>
+                `;
+            } else {
+                msg.innerHTML = content;
+            }
+            
+            body.appendChild(msg);
+            body.scrollTop = body.scrollHeight;
+        }
+        
+        function sendAiMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addAiMessage('user', text);
+            input.value = '';
+            input.style.height = '40px'; // 重置高度
+            input.style.overflowY = 'hidden';
+            
+            // AI回复
+            setTimeout(() => {
+                if (text.includes('shell') || text.includes('Shell')) {
+                    showShells();
+                } else if (text.includes('执行') || text.includes('利用')) {
+                    autoExploit();
+                } else {
+                    addAiMessage('assistant', '收到你的指令，我会根据扫描日志智能分析并执行最优利用策略。有任何问题随时问我！', 'info');
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>

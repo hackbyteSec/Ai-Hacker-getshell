@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP工具测试中心 - AI Red Team</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121a2d;
+            --bg-card: #1a2342;
+            --accent-cyan: #00d4ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff4757;
+            --accent-yellow: #ffa502;
+            --accent-purple: #a855f7;
+            --text-primary: #e0e6ed;
+            --text-secondary: #8892a0;
+            --border-color: #2a3a5a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            padding: 20px 30px;
+            border-bottom: 2px solid var(--accent-cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 2.5rem;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+        
+        .logo-sub {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online { background: var(--accent-green); }
+        .status-dot.offline { background: var(--accent-red); animation: none; }
+        .status-dot.checking { background: var(--accent-yellow); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.95); }
+        }
+        
+        /* 主体布局 */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        /* 工具矩阵区域 */
+        .tools-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tool-stats {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            padding: 5px 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .stat-item.success { border-left: 3px solid var(--accent-green); }
+        .stat-item.failed { border-left: 3px solid var(--accent-red); }
+        .stat-item.pending { border-left: 3px solid var(--accent-yellow); }
+        
+        /* 工具分类标签 */
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .category-tab {
+            padding: 8px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .category-tab:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        
+        .category-tab.active {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border-color: var(--accent-cyan);
+        }
+        
+        /* 工具按钮矩阵 */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .tools-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .tools-grid::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        .tool-btn {
+            position: relative;
+            padding: 12px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .tool-btn:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .tool-btn.running {
+            border-color: var(--accent-yellow);
+            animation: borderPulse 1.5s infinite;
+        }
+        
+        .tool-btn.success {
+            border-color: var(--accent-green);
+        }
+        
+        .tool-btn.failed {
+            border-color: var(--accent-red);
+        }
+        
+        @keyframes borderPulse {
+            0%, 100% { border-color: var(--accent-yellow); }
+            50% { border-color: rgba(255, 165, 2, 0.5); }
+        }
+        
+        .tool-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+        
+        .tool-category {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .tool-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+        }
+        
+        .tool-status.available { background: var(--accent-green); }
+        .tool-status.unavailable { background: var(--accent-red); }
+        .tool-status.running { background: var(--accent-yellow); animation: pulse 1s infinite; }
+        
+        /* 右侧面板 */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .panel-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .panel-title {
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 调用流程图 */
+        .flow-diagram {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-cyan);
+        }
+        
+        .flow-step.active {
+            border-left-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .flow-number {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .flow-content {
+            flex: 1;
+        }
+        
+        .flow-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .flow-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        /* 结果显示区域 */
+        .result-area {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .result-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .result-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        .result-success { color: var(--accent-green); }
+        .result-error { color: var(--accent-red); }
+        .result-info { color: var(--accent-cyan); }
+        
+        /* 依赖状态面板 */
+        .dependency-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .dep-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+        }
+        
+        .dep-name {
+            font-size: 0.85rem;
+        }
+        
+        .dep-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .dep-status.installed {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+        }
+        
+        .dep-status.missing {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent-red);
+        }
+        
+        /* 控制按钮 */
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+        
+        .btn-primary:hover {
+            background: #00b8e6;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--accent-cyan);
+        }
+        
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+        
+        /* 底部状态栏 */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 10px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-info {
+            display: flex;
+            gap: 30px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .panel-card {
+                flex: 1;
+                min-width: 300px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .tools-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .category-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 10px;
+            }
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--accent-cyan);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            color: var(--accent-cyan);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-close:hover {
+            color: var(--accent-red);
+        }
+        
+        /* 输入表单 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🔒</span>
+            <div>
+                <h1>MCP工具测试中心</h1>
+                <span class="logo-sub">AI Red Team - 共64个安全工具</span>
+            </div>
+        </div>
+        <div class="server-status">
+            <span class="status-dot checking" id="serverStatusDot"></span>
+            <span id="serverStatusText">检查连接中...</span>
+            <span id="serverUrl">http://api.hackapt.com:5000</span>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="main-container">
+        <!-- 工具矩阵区域 -->
+        <section class="tools-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>🛠️</span>
+                    工具测试矩阵
+                </h2>
+                <div class="tool-stats">
+                    <span class="stat-item success" id="statSuccess">成功: 0</span>
+                    <span class="stat-item failed" id="statFailed">失败: 0</span>
+                    <span class="stat-item pending" id="statPending">待测: 64</span>
+                </div>
+            </div>
+            
+            <!-- 分类标签 -->
+            <div class="category-tabs">
+                <div class="category-tab active" data-category="all">全部 (64)</div>
+                <div class="category-tab" data-category="recon">信息收集 (20)</div>
+                <div class="category-tab" data-category="vuln_scan">漏洞扫描 (10)</div>
+                <div class="category-tab" data-category="web_attack">Web攻击 (9)</div>
+                <div class="category-tab" data-category="network">网络攻击 (8)</div>
+                <div class="category-tab" data-category="exploit">漏洞利用 (3)</div>
+                <div class="category-tab" data-category="post_exploit">后渗透 (5)</div>
+                <div class="category-tab" data-category="cloud">云安全 (4)</div>
+                <div class="category-tab" data-category="ai">AI辅助 (5)</div>
+            </div>
+            
+            <!-- 工具按钮网格 -->
+            <div class="tools-grid" id="toolsGrid"></div>
+        </section>
+
+        <!-- 右侧面板 -->
+        <aside class="right-panel">
+            <!-- 调用流程图 -->
+            <div class="panel-card">
+                <h3 class="panel-title">📊 调用流程图</h3>
+                <div class="flow-diagram" id="flowDiagram">
+                    <div class="flow-step" data-step="1">
+                        <span class="flow-number">1</span>
+                        <div class="flow-content">
+                            <div class="flow-title">前端发起请求</div>
+                            <div class="flow-desc">POST /execute 或 /chat</div>
+                        </div>
+                    </div>
+                    <div class="flow-step" data-step="2">
+                        <span class="flow-number">2</span>
+                        <div class="flow-content">
+                            <div class="flow-title">MCP Server 接收</div>
+                            <div class="flow-desc">Flask 路由处理</div>
+                        </div>
+                    </div>
+                    <div class="flow-step" data-step="3">
+                        <span class="flow-number">3</span>
+                        <div class="flow-content">
+                            <div class="flow-title">工具注册表查询</div>
+                            <div class="flow-desc">ToolRegistry.get_tool()</div>
+                        </div>
+                    </div>
+                    <div class="flow-step" data-step="4">
+                        <span class="flow-number">4</span>
+                        <div class="flow-content">
+                            <div class="flow-title">参数验证</div>
+                            <div class="flow-desc">validate_params()</div>
+                        </div>
+                    </div>
+                    <div class="flow-step" data-step="5">
+                        <span class="flow-number">5</span>
+                        <div class="flow-content">
+                            <div class="flow-title">本地命令执行</div>
+                            <div class="flow-desc">subprocess.run() 调用本地工具</div>
+                        </div>
+                    </div>
+                    <div class="flow-step" data-step="6">
+                        <span class="flow-number">6</span>
+                        <div class="flow-content">
+                            <div class="flow-title">结果返回</div>
+                            <div class="flow-desc">JSON 格式响应</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 依赖状态 -->
+            <div class="panel-card">
+                <h3 class="panel-title">📦 本地工具依赖</h3>
+                <div class="dependency-list" id="dependencyList">
+                    <div class="dep-item">
+                        <span class="dep-name">nmap</span>
+                        <span class="dep-status missing">检测中</span>
+                    </div>
+                </div>
+                <div class="control-buttons">
+                    <button class="btn btn-secondary" onclick="checkDependencies()">🔄 重新检测</button>
+                </div>
+            </div>
+
+            <!-- 结果显示 -->
+            <div class="panel-card">
+                <h3 class="panel-title">📋 执行结果</h3>
+                <div class="result-area" id="resultArea">
+<span class="result-info">等待执行工具测试...</span>
+
+<span class="result-info">═══════════════════════════════════════════</span>
+<span class="result-info">MCP 调用机制说明:</span>
+<span class="result-info">═══════════════════════════════════════════</span>
+
+<span class="result-success">1. 服务架构:</span>
+   MCP Server (Flask) 监听 http://127.0.0.1:5000
+   前端通过 REST API 调用工具
+
+<span class="result-success">2. 调用路径:</span>
+   前端 → POST /execute → ToolRegistry → subprocess
+   依赖本地安装的安全工具 (nmap, nuclei等)
+
+<span class="result-success">3. 本地环境依赖:</span>
+   - 必需: nmap, whois, dig, curl
+   - 推荐: subfinder, httpx, nuclei, whatweb
+   - 可选: sqlmap, hydra, gobuster, nikto
+
+<span class="result-success">4. 工具调用方式:</span>
+   直接调用本地二进制工具
+   通过 subprocess.run() 执行命令
+   不依赖外部API (除AI引擎外)
+</div>
+                <div class="control-buttons">
+                    <button class="btn btn-secondary" onclick="clearResults()">清空</button>
+                    <button class="btn btn-primary" onclick="runAllTests()">🚀 全部测试</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <footer class="footer">
+        <div class="footer-info">
+            <span>🔧 工具总数: <strong>64</strong></span>
+            <span>📊 Nuclei模板: <strong>11997</strong></span>
+            <span>🎯 KEV漏洞: <strong>1496</strong></span>
+        </div>
+        <div class="footer-info">
+            <span id="lastUpdateTime">最后更新: -</span>
+        </div>
+    </footer>
+
+    <!-- 工具详情模态框 -->
+    <div class="modal" id="toolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">工具名称</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <div class="form-group">
+                    <label class="form-label">目标 (target)</label>
+                    <input type="text" class="form-input" id="inputTarget" placeholder="例如: 192.168.1.1 或 example.com">
+                </div>
+                <div class="form-group" id="extraParams"></div>
+                <div class="control-buttons">
+                    <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button class="btn btn-primary" onclick="executeTool()">执行测试</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================== 工具数据定义 =====================
+        const TOOLS = [
+            // ===== 信息收集 (20个) =====
+            { name: "nmap_scan", display: "Nmap扫描", category: "recon", dep: "nmap", desc: "端口扫描和服务识别" },
+            { name: "subdomain_enum", display: "子域名枚举", category: "recon", dep: "subfinder", desc: "枚举目标子域名" },
+            { name: "dns_enum", display: "DNS枚举", category: "recon", dep: "dig", desc: "DNS记录查询" },
+            { name: "zone_transfer", display: "区域传送", category: "recon", dep: "dig", desc: "AXFR漏洞检测" },
+            { name: "whois_lookup", display: "Whois查询", category: "recon", dep: "whois", desc: "域名注册信息" },
+            { name: "theharvester", display: "TheHarvester", category: "recon", dep: "theHarvester", desc: "邮箱/子域名收集" },
+            { name: "whatweb", display: "WhatWeb", category: "recon", dep: "whatweb", desc: "Web技术栈识别" },
+            { name: "wafw00f", display: "WAF检测", category: "recon", dep: "wafw00f", desc: "WAF识别" },
+            { name: "httpx_probe", display: "Httpx探测", category: "recon", dep: "httpx", desc: "HTTP探测" },
+            { name: "google_dork", display: "Google Dork", category: "recon", dep: null, desc: "搜索语法生成" },
+            { name: "quick_recon", display: "快速侦察", category: "recon", dep: "nmap", desc: "一键信息收集" },
+            { name: "intelligent_recon", display: "智能打点", category: "recon", dep: null, desc: "AI驱动侦察" },
+            { name: "js_source_analysis", display: "JS分析", category: "recon", dep: null, desc: "JS源码分析" },
+            { name: "default_credential_test", display: "默认口令", category: "recon", dep: null, desc: "默认密码测试" },
+            { name: "waf_bypass_test", display: "WAF绕过", category: "recon", dep: null, desc: "WAF绕过测试" },
+            { name: "complete_recon_workflow", display: "完整流程", category: "recon", dep: null, desc: "10阶段侦察" },
+            { name: "recon_tools_recommend", display: "工具推荐", category: "recon", dep: null, desc: "工具链推荐" },
+            { name: "identify_tech", display: "组件识别", category: "recon", dep: null, desc: "Web组件识别" },
+            { name: "system_check", display: "系统检查", category: "recon", dep: null, desc: "工具可用性检查" },
+            { name: "generate_report", display: "生成报告", category: "recon", dep: null, desc: "生成侦察报告" },
+            
+            // ===== 漏洞扫描 (10个) =====
+            { name: "vuln_scan", display: "Nuclei扫描", category: "vuln_scan", dep: "nuclei", desc: "基于模板漏洞扫描" },
+            { name: "nikto_scan", display: "Nikto扫描", category: "vuln_scan", dep: "nikto", desc: "Web服务器漏洞" },
+            { name: "sslscan", display: "SSL扫描", category: "vuln_scan", dep: "sslscan", desc: "SSL/TLS配置检测" },
+            { name: "testssl", display: "TestSSL", category: "vuln_scan", dep: "testssl", desc: "全面SSL测试" },
+            { name: "searchsploit", display: "Searchsploit", category: "vuln_scan", dep: "searchsploit", desc: "Exploit-DB搜索" },
+            { name: "cve_search", display: "CVE搜索", category: "vuln_scan", dep: null, desc: "CVE信息查询" },
+            { name: "nuclei_full", display: "Nuclei全量", category: "vuln_scan", dep: "nuclei", desc: "11997模板扫描" },
+            { name: "nuclei_cve", display: "Nuclei CVE", category: "vuln_scan", dep: "nuclei", desc: "专项CVE扫描" },
+            { name: "deep_vuln_scan", display: "深度漏扫", category: "vuln_scan", dep: null, desc: "Shiro/Log4j检测" },
+            { name: "nuclei_complete_scan", display: "Nuclei完整", category: "vuln_scan", dep: "nuclei", desc: "完整模板扫描" },
+            
+            // ===== Web攻击 (9个) =====
+            { name: "sqli_test", display: "SQL注入", category: "web_attack", dep: "sqlmap", desc: "SQLMap检测" },
+            { name: "sqli_payload", display: "SQLi Payload", category: "web_attack", dep: null, desc: "注入载荷生成" },
+            { name: "xss_scan", display: "XSS扫描", category: "web_attack", dep: "xsstrike", desc: "XSS漏洞检测" },
+            { name: "dir_scan", display: "目录扫描", category: "web_attack", dep: "gobuster", desc: "目录/文件发现" },
+            { name: "gobuster", display: "Gobuster", category: "web_attack", dep: "gobuster", desc: "暴力扫描" },
+            { name: "ffuf", display: "Ffuf", category: "web_attack", dep: "ffuf", desc: "Web Fuzzer" },
+            { name: "verify_vuln", display: "漏洞验证", category: "web_attack", dep: null, desc: "漏洞真实性验证" },
+            { name: "get_payloads", display: "获取Payload", category: "web_attack", dep: null, desc: "Payload库查询" },
+            { name: "payload_stats", display: "Payload统计", category: "web_attack", dep: null, desc: "Payload库统计" },
+            
+            // ===== 网络攻击 (8个) =====
+            { name: "brute_force", display: "密码爆破", category: "network", dep: "hydra", desc: "网络服务爆破" },
+            { name: "crackmapexec", display: "CrackMapExec", category: "network", dep: "crackmapexec", desc: "后渗透工具" },
+            { name: "smb_enum", display: "SMB枚举", category: "network", dep: "enum4linux", desc: "SMB信息收集" },
+            { name: "ssh_audit", display: "SSH审计", category: "network", dep: "ssh-audit", desc: "SSH安全审计" },
+            { name: "snmp_walk", display: "SNMP Walk", category: "network", dep: "snmpwalk", desc: "SNMP信息收集" },
+            { name: "ldap_enum", display: "LDAP枚举", category: "network", dep: "ldapsearch", desc: "LDAP信息收集" },
+            { name: "enhanced_scan", display: "增强扫描", category: "network", dep: null, desc: "资产+漏洞扫描" },
+            { name: "smart_service_scan", display: "智能服务", category: "network", dep: null, desc: "端口策略分析" },
+            
+            // ===== 漏洞利用 (3个) =====
+            { name: "msf_search", display: "MSF搜索", category: "exploit", dep: "msfconsole", desc: "Metasploit模块搜索" },
+            { name: "msfvenom", display: "MsfVenom", category: "exploit", dep: "msfvenom", desc: "Payload生成" },
+            { name: "reverse_shell", display: "反向Shell", category: "exploit", dep: null, desc: "Shell生成器" },
+            
+            // ===== 后渗透 (5个) =====
+            { name: "linpeas", display: "LinPEAS", category: "post_exploit", dep: null, desc: "Linux提权枚举" },
+            { name: "winpeas", display: "WinPEAS", category: "post_exploit", dep: null, desc: "Windows提权枚举" },
+            { name: "linux_exploit_suggester", display: "Linux漏洞", category: "post_exploit", dep: null, desc: "内核漏洞建议" },
+            { name: "linenum", display: "LinEnum", category: "post_exploit", dep: null, desc: "Linux枚举" },
+            { name: "windows_enum", display: "Win枚举", category: "post_exploit", dep: null, desc: "Windows枚举" },
+            
+            // ===== 云安全 (4个) =====
+            { name: "aws_enum", display: "AWS枚举", category: "cloud", dep: "aws", desc: "AWS资源枚举" },
+            { name: "s3_scanner", display: "S3扫描", category: "cloud", dep: "aws", desc: "S3存储桶扫描" },
+            { name: "azure_enum", display: "Azure枚举", category: "cloud", dep: "az", desc: "Azure资源枚举" },
+            { name: "kube_hunter", display: "K8s Hunter", category: "cloud", dep: "kube-hunter", desc: "K8s安全扫描" },
+            
+            // ===== AI辅助 (5个) =====
+            { name: "auto_recon", display: "自动打点", category: "ai", dep: null, desc: "AI自动化渗透" },
+            { name: "ai_attack_plan", display: "攻击规划", category: "ai", dep: null, desc: "AI生成攻击计划" },
+            { name: "get_exploit", display: "获取Exploit", category: "ai", dep: null, desc: "漏洞利用模板" },
+            { name: "list_exploits", display: "列出Exploit", category: "ai", dep: null, desc: "所有利用模板" },
+            { name: "query_payload_library", display: "Payload库", category: "ai", dep: null, desc: "完整Payload查询" }
+        ];
+
+        // 本地依赖工具列表
+        const LOCAL_DEPENDENCIES = [
+            { name: "nmap", desc: "端口扫描", required: true },
+            { name: "whois", desc: "域名查询", required: true },
+            { name: "dig", desc: "DNS查询", required: true },
+            { name: "curl", desc: "HTTP请求", required: true },
+            { name: "subfinder", desc: "子域名枚举", required: false },
+            { name: "httpx", desc: "HTTP探测", required: false },
+            { name: "nuclei", desc: "漏洞扫描", required: false },
+            { name: "whatweb", desc: "技术栈识别", required: false },
+            { name: "wafw00f", desc: "WAF检测", required: false },
+            { name: "gobuster", desc: "目录扫描", required: false },
+            { name: "nikto", desc: "Web漏洞扫描", required: false },
+            { name: "sslscan", desc: "SSL扫描", required: false },
+            { name: "sqlmap", desc: "SQL注入", required: false },
+            { name: "hydra", desc: "密码爆破", required: false },
+            { name: "msfconsole", desc: "Metasploit", required: false }
+        ];
+
+        // ===================== 状态变量 =====================
+        // 服务器地址配置
+        let serverUrl = 'http://api.hackapt.com:5000';
+        let testResults = { success: 0, failed: 0, pending: TOOLS.length };
+        let currentCategory = 'all';
+        let selectedTool = null;
+        let depStatus = {};
+
+        // ===================== 初始化 =====================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 先渲染工具（初始状态）
+            renderTools();
+            bindCategoryTabs();
+            
+            // 并行检查服务器状态和依赖
+            await checkServerStatus();
+            
+            // 服务器在线后再检测依赖
+            const dot = document.getElementById('serverStatusDot');
+            if (dot.classList.contains('online')) {
+                await checkDependencies();
+            } else {
+                // 服务器离线，显示警告
+                const list = document.getElementById('dependencyList');
+                list.innerHTML = `
+                    <div class="dep-item" style="background: rgba(255,71,87,0.1); border: 1px solid var(--accent-red);">
+                        <span class="dep-name" style="color: var(--accent-red);">⚠️ 服务器离线，无法检测依赖</span>
+                    </div>
+                `;
+            }
+        });
+
+        // ===================== 渲染工具矩阵 =====================
+        function renderTools(category = 'all') {
+            const grid = document.getElementById('toolsGrid');
+            grid.innerHTML = '';
+                    
+            const filteredTools = category === 'all' 
+                ? TOOLS 
+                : TOOLS.filter(t => t.category === category);
+                    
+            filteredTools.forEach(tool => {
+                const btn = document.createElement('div');
+                btn.className = 'tool-btn';
+                btn.dataset.tool = tool.name;
+                        
+                // 判断工具可用性：无依赖为可用，有依赖则检查depStatus
+                let statusClass = '';
+                let statusTitle = '';
+                        
+                if (!tool.dep) {
+                    // 无外部依赖，工具可用（Python内置）
+                    statusClass = 'available';
+                    statusTitle = '无外部依赖，可直接使用';
+                } else if (depStatus[tool.dep] === true) {
+                    // 依赖已安装
+                    statusClass = 'available';
+                    statusTitle = `依赖 ${tool.dep} 已安装`;
+                } else if (depStatus[tool.dep] === false) {
+                    // 依赖未安装
+                    statusClass = 'unavailable';
+                    statusTitle = `依赖 ${tool.dep} 未安装`;
+                } else {
+                    // 状态未知
+                    statusClass = '';
+                    statusTitle = `依赖 ${tool.dep} 状态未知`;
+                }
+                        
+                btn.innerHTML = `
+                    <div class="tool-status ${statusClass}" id="status-${tool.name}" title="${statusTitle}"></div>
+                    <div class="tool-name">${tool.display}</div>
+                    <div class="tool-category">${getCategoryName(tool.category)} ${tool.dep ? '• ' + tool.dep : ''}</div>
+                `;
+                btn.onclick = () => openToolModal(tool);
+                grid.appendChild(btn);
+            });
+        }
+
+        function getCategoryName(cat) {
+            const names = {
+                recon: '信息收集',
+                vuln_scan: '漏洞扫描',
+                web_attack: 'Web攻击',
+                network: '网络攻击',
+                exploit: '漏洞利用',
+                post_exploit: '后渗透',
+                cloud: '云安全',
+                ai: 'AI辅助'
+            };
+            return names[cat] || cat;
+        }
+
+        // ===================== 分类标签绑定 =====================
+        function bindCategoryTabs() {
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.onclick = () => {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentCategory = tab.dataset.category;
+                    renderTools(currentCategory);
+                };
+            });
+        }
+
+        // ===================== 服务器状态检查 =====================
+        async function checkServerStatus() {
+            const dot = document.getElementById('serverStatusDot');
+            const text = document.getElementById('serverStatusText');
+            
+            try {
+                const resp = await fetch(`${serverUrl}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                if (resp.ok) {
+                    dot.className = 'status-dot online';
+                    text.textContent = '服务在线';
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (e) {
+                dot.className = 'status-dot offline';
+                text.textContent = '服务离线';
+            }
+        }
+
+        // ===================== 依赖检查 =====================
+        async function checkDependencies() {
+            const list = document.getElementById('dependencyList');
+            
+            // 显示加载状态
+            list.innerHTML = '<div class="dep-item"><span class="dep-name">正在检测...</span><span class="dep-status missing">⏳</span></div>';
+            
+            // 重置依赖状态
+            depStatus = {};
+            
+            try {
+                const resp = await fetch(`${serverUrl}/logs/init`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!resp.ok) {
+                    throw new Error(`服务器返回 ${resp.status}`);
+                }
+                
+                const data = await resp.json();
+                
+                if (data.success && Array.isArray(data.statuses)) {
+                    // 从后端返回的statuses中提取唯一的依赖项
+                    const depMap = new Map(); // key: dependency名称, value: {ok: boolean, tools: []}
+                    
+                    data.statuses.forEach(s => {
+                        const depName = s.dependency || null;
+                        if (depName) {
+                            if (!depMap.has(depName)) {
+                                depMap.set(depName, {
+                                    ok: s.dependency_ok !== false, // 默认true，除非明确false
+                                    tools: []
+                                });
+                            }
+                            const dep = depMap.get(depName);
+                            dep.tools.push(s.tool);
+                            // 只要有一个检测为false，就标记为false
+                            if (s.dependency_ok === false) {
+                                dep.ok = false;
+                            }
+                        }
+                        
+                        // 更新全局依赖状态用于工具按钮显示
+                        if (depName) {
+                            depStatus[depName] = depMap.get(depName).ok;
+                        }
+                    });
+                    
+                    // 按状态排序：未安装的在前，已安装的在后
+                    const sortedDeps = Array.from(depMap.entries()).sort((a, b) => {
+                        if (a[1].ok === b[1].ok) return a[0].localeCompare(b[0]);
+                        return a[1].ok ? 1 : -1;
+                    });
+                    
+                    // 统计
+                    const installed = sortedDeps.filter(d => d[1].ok).length;
+                    const missing = sortedDeps.filter(d => !d[1].ok).length;
+                    
+                    // 渲染依赖列表
+                    list.innerHTML = `
+                        <div class="dep-item" style="background: transparent; padding: 5px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 8px;">
+                            <span class="dep-name" style="font-size: 0.75rem; color: var(--text-secondary);">共 ${sortedDeps.length} 个依赖</span>
+                            <span style="font-size: 0.75rem;">
+                                <span style="color: var(--accent-green)">✓${installed}</span> / 
+                                <span style="color: var(--accent-red)">✗${missing}</span>
+                            </span>
+                        </div>
+                        ${sortedDeps.map(([name, info]) => `
+                            <div class="dep-item" title="使用此依赖的工具: ${info.tools.join(', ')}">
+                                <span class="dep-name">${name}</span>
+                                <span class="dep-status ${info.ok ? 'installed' : 'missing'}">
+                                    ${info.ok ? '已安装' : '未安装'}
+                                </span>
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    // 更新结果区域显示
+                    appendResult(`\n[依赖检测] 完成 - 已安装: ${installed}, 未安装: ${missing}`, installed === sortedDeps.length ? 'success' : 'info');
+                    
+                } else {
+                    throw new Error(data.error || '返回数据格式错误');
+                }
+                
+            } catch (e) {
+                console.error('依赖检测失败:', e);
+                
+                // 服务器离线或请求失败，使用本地静态列表
+                list.innerHTML = `
+                    <div class="dep-item" style="background: rgba(255,71,87,0.1); border: 1px solid var(--accent-red);">
+                        <span class="dep-name" style="color: var(--accent-red);">⚠️ 检测失败: ${e.message}</span>
+                    </div>
+                    ${LOCAL_DEPENDENCIES.map(dep => `
+                        <div class="dep-item">
+                            <span class="dep-name">${dep.name} ${dep.required ? '(必需)' : ''}</span>
+                            <span class="dep-status missing">未知</span>
+                        </div>
+                    `).join('')}
+                `;
+                
+                // 标记所有依赖为未知状态
+                LOCAL_DEPENDENCIES.forEach(dep => {
+                    depStatus[dep.name] = undefined;
+                });
+                
+                appendResult(`\n[依赖检测] 失败 - ${e.message}`, 'error');
+            }
+            
+            // 重新渲染工具矩阵以更新可用状态
+            renderTools(currentCategory);
+        }
+
+        // ===================== 工具模态框 =====================
+        function openToolModal(tool) {
+            selectedTool = tool;
+            document.getElementById('modalTitle').textContent = `🔧 ${tool.display}`;
+            document.getElementById('inputTarget').value = '';
+            document.getElementById('extraParams').innerHTML = `
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 10px;">
+                    <strong>工具描述:</strong> ${tool.desc}<br>
+                    <strong>依赖工具:</strong> ${tool.dep || '无 (Python内置)'}<br>
+                    <strong>工具ID:</strong> ${tool.name}
+                </p>
+            `;
+            document.getElementById('toolModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('toolModal').classList.remove('show');
+            selectedTool = null;
+        }
+
+        // ===================== 执行工具测试 =====================
+        async function executeTool() {
+            if (!selectedTool) return;
+            
+            const target = document.getElementById('inputTarget').value.trim();
+            if (!target && selectedTool.name !== 'system_check' && selectedTool.name !== 'payload_stats') {
+                appendResult(`[错误] 请输入目标`, 'error');
+                return;
+            }
+
+            closeModal();
+            
+            const toolBtn = document.querySelector(`[data-tool="${selectedTool.name}"]`);
+            const statusDot = document.getElementById(`status-${selectedTool.name}`);
+            
+            // 更新流程图状态
+            updateFlowStep(1);
+            
+            toolBtn.classList.add('running');
+            statusDot.classList.add('running');
+            
+            appendResult(`\n[${new Date().toLocaleTimeString()}] 开始测试: ${selectedTool.display}`, 'info');
+            appendResult(`目标: ${target || 'N/A'}`, 'info');
+
+            try {
+                updateFlowStep(2);
+                
+                const params = { target };
+                if (selectedTool.name === 'nmap_scan') {
+                    params.scan_type = 'quick';
+                }
+
+                updateFlowStep(3);
+                updateFlowStep(4);
+                
+                const resp = await fetch(`${serverUrl}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: selectedTool.name,
+                        params: params
+                    })
+                });
+
+                updateFlowStep(5);
+                
+                const result = await resp.json();
+                
+                updateFlowStep(6);
+
+                if (result.success) {
+                    toolBtn.classList.remove('running');
+                    toolBtn.classList.add('success');
+                    statusDot.classList.remove('running');
+                    statusDot.classList.add('available');
+                    
+                    testResults.success++;
+                    testResults.pending--;
+                    
+                    appendResult(`[成功] ${selectedTool.display} 执行完成 (${result.duration?.toFixed(2) || 0}s)`, 'success');
+                    if (result.result?.stdout) {
+                        appendResult(result.result.stdout.substring(0, 500), 'info');
+                    }
+                } else {
+                    throw new Error(result.error || '执行失败');
+                }
+            } catch (e) {
+                toolBtn.classList.remove('running');
+                toolBtn.classList.add('failed');
+                statusDot.classList.remove('running');
+                statusDot.classList.add('unavailable');
+                
+                testResults.failed++;
+                testResults.pending--;
+                
+                appendResult(`[失败] ${selectedTool.display}: ${e.message}`, 'error');
+            }
+
+            updateStats();
+            clearFlowSteps();
+        }
+
+        // ===================== 辅助函数 =====================
+        function appendResult(text, type = 'info') {
+            const area = document.getElementById('resultArea');
+            const span = document.createElement('span');
+            span.className = `result-${type}`;
+            span.textContent = text + '\n';
+            area.appendChild(span);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('resultArea').innerHTML = '<span class="result-info">结果已清空，等待新的测试...</span>\n';
+        }
+
+        function updateStats() {
+            document.getElementById('statSuccess').textContent = `成功: ${testResults.success}`;
+            document.getElementById('statFailed').textContent = `失败: ${testResults.failed}`;
+            document.getElementById('statPending').textContent = `待测: ${testResults.pending}`;
+            document.getElementById('lastUpdateTime').textContent = `最后更新: ${new Date().toLocaleTimeString()}`;
+        }
+
+        function updateFlowStep(stepNum) {
+            document.querySelectorAll('.flow-step').forEach((step, i) => {
+                step.classList.toggle('active', i + 1 <= stepNum);
+            });
+        }
+
+        function clearFlowSteps() {
+            setTimeout(() => {
+                document.querySelectorAll('.flow-step').forEach(step => {
+                    step.classList.remove('active');
+                });
+            }, 2000);
+        }
+
+        // ===================== 全部测试 =====================
+        async function runAllTests() {
+            const quickTests = ['system_check', 'payload_stats', 'list_exploits', 'google_dork'];
+            
+            appendResult('\n═══════════════════════════════════════════', 'info');
+            appendResult('开始批量测试 (仅测试无需目标的工具)', 'info');
+            appendResult('═══════════════════════════════════════════\n', 'info');
+
+            for (const toolName of quickTests) {
+                const tool = TOOLS.find(t => t.name === toolName);
+                if (!tool) continue;
+                
+                selectedTool = tool;
+                document.getElementById('inputTarget').value = toolName === 'google_dork' ? 'example.com' : '';
+                
+                const toolBtn = document.querySelector(`[data-tool="${toolName}"]`);
+                toolBtn?.classList.add('running');
+                
+                try {
+                    const resp = await fetch(`${serverUrl}/execute`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tool: toolName,
+                            params: toolName === 'google_dork' ? { domain: 'example.com' } : {}
+                        })
+                    });
+                    
+                    const result = await resp.json();
+                    
+                    if (result.success) {
+                        toolBtn?.classList.remove('running');
+                        toolBtn?.classList.add('success');
+                        appendResult(`✓ ${tool.display}: 成功`, 'success');
+                        testResults.success++;
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (e) {
+                    toolBtn?.classList.remove('running');
+                    toolBtn?.classList.add('failed');
+                    appendResult(`✗ ${tool.display}: ${e.message}`, 'error');
+                    testResults.failed++;
+                }
+                
+                testResults.pending--;
+                updateStats();
+                
+                // 间隔执行
+                await new Promise(r => setTimeout(r, 500));
+            }
+            
+            appendResult('\n批量测试完成', 'info');
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('toolModal').onclick = function(e) {
+            if (e.target === this) closeModal();
+        };
+    </script>
+</body>
+</html>

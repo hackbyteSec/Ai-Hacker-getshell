@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOFA Security Platform - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #00ff88;
+            --green-dim: rgba(0, 255, 136, 0.6);
+            --green-dark: rgba(0, 255, 136, 0.15);
+            --green-glow: rgba(0, 255, 136, 0.3);
+        }
+
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 小格子像素背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.06) 1px, transparent 1px);
+            background-size: 8px 8px;
+            z-index: 0;
+        }
+
+        /* 数据流背景 */
+        .data-stream {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .stream-column {
+            position: absolute;
+            top: -100%;
+            font-size: 12px;
+            color: var(--green);
+            writing-mode: vertical-rl;
+            animation: fall linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(250vh); }
+        }
+
+        /* 登录容器 */
+        .login-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 8, 4, 0.98);
+            border: 1px solid var(--green-dim);
+            box-shadow: 
+                0 0 40px rgba(0, 255, 136, 0.1),
+                inset 0 0 60px rgba(0, 255, 136, 0.02);
+        }
+
+        /* 顶部标题栏 */
+        .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--green-dark);
+            background: linear-gradient(90deg, rgba(0,255,136,0.05), transparent, rgba(0,255,136,0.05));
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--green);
+        }
+
+        .header-title {
+            font-size: 11px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 15px;
+            font-size: 9px;
+            color: var(--green-dim);
+            letter-spacing: 1px;
+        }
+
+        .header-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--green);
+            border-radius: 50%;
+        }
+
+        /* 主体内容 */
+        .main-content {
+            display: flex;
+        }
+
+        /* 左侧指纹区域 */
+        .fingerprint-panel {
+            width: 300px;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--green-dark);
+            background: rgba(0, 255, 136, 0.01);
+            position: relative;
+        }
+
+        /* 装饰线条 */
+        .fingerprint-panel::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 1px;
+            background: linear-gradient(90deg, var(--green-dark), var(--green-dim), var(--green-dark));
+        }
+
+        .fingerprint-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 1px;
+            background: linear-gradient(90deg, var(--green-dark), var(--green-dim), var(--green-dark));
+        }
+
+        .scan-label {
+            font-size: 9px;
+            color: var(--green-dim);
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .scan-box {
+            width: 180px;
+            height: 220px;
+            border: 1px solid var(--green-dim);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 255, 136, 0.02);
+        }
+
+        /* 四角亮边 */
+        .scan-box::before { content: ''; position: absolute; top: -1px; left: -1px; width: 30px; height: 30px; border-top: 2px solid var(--green); border-left: 2px solid var(--green); }
+        .scan-box::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--green); border-right: 2px solid var(--green); }
+        .corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--green); border-left: 2px solid var(--green); }
+        .corner-br { position: absolute; bottom: -1px; right: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--green); border-right: 2px solid var(--green); }
+
+        /* 扫描框内部网格 */
+        .scan-grid {
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px);
+            background-size: 15px 15px;
+            pointer-events: none;
+        }
+
+        /* 六芒星图形 */
+        .hexagram-svg {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hexagram-svg path, .hexagram-svg polygon, .hexagram-svg circle, .hexagram-svg line {
+            fill: none;
+            stroke: var(--green);
+            stroke-width: 1;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* 旋转的六芒星层 */
+        .hex-layer-1 {
+            animation: rotateHex 20s linear infinite;
+            transform-origin: center;
+        }
+
+        .hex-layer-2 {
+            animation: rotateHex 25s linear infinite reverse;
+            transform-origin: center;
+        }
+
+        .hex-layer-3 {
+            animation: rotateHex 30s linear infinite;
+            transform-origin: center;
+        }
+
+        @keyframes rotateHex {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 脉冲效果 */
+        .hex-pulse {
+            animation: hexPulse 2s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        @keyframes hexPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        /* 闪烁的点 */
+        .hex-dot {
+            fill: var(--green);
+            stroke: none;
+            animation: dotGlow 1.5s ease-in-out infinite;
+        }
+
+        .hex-dot:nth-child(odd) { animation-delay: 0s; }
+        .hex-dot:nth-child(even) { animation-delay: 0.75s; }
+
+        @keyframes dotGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* 中心发光 */
+        .hex-center-glow {
+            fill: var(--green);
+            opacity: 0.15;
+            animation: centerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes centerPulse {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.25; }
+        }
+
+        /* 连接线 -->
+        .hex-connector {
+            stroke-width: 0.5;
+            opacity: 0.4;
+            stroke-dasharray: 3 2;
+        }
+
+        /* 发光效果 */
+        .hex-glow {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(0,255,136,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* 扫描光线 */
+        .scan-line {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            height: 2px;
+            background: var(--green);
+            box-shadow: 
+                0 0 10px var(--green), 
+                0 0 20px var(--green), 
+                0 0 40px rgba(0, 255, 136, 0.5),
+                0 -20px 40px rgba(0, 255, 136, 0.1);
+            animation: scanning 2.5s linear infinite;
+            z-index: 2;
+        }
+
+        @keyframes scanning {
+            0% { top: 5px; opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { top: calc(100% - 5px); opacity: 0; }
+        }
+
+        .scan-status {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scan-text {
+            font-size: 11px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+
+        .scan-progress {
+            width: 120px;
+            height: 2px;
+            background: var(--green-dark);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scan-progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            animation: progressMove 1.5s linear infinite;
+        }
+
+        @keyframes progressMove {
+            0% { left: -50%; }
+            100% { left: 100%; }
+        }
+
+        /* 右侧登录表单 */
+        .login-panel {
+            width: 340px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            color: var(--green);
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+
+        .login-subtitle {
+            font-size: 10px;
+            color: var(--green-dim);
+            letter-spacing: 2px;
+        }
+
+        .login-divider {
+            height: 1px;
+            background: linear-gradient(90deg, var(--green-dim), var(--green-dark), transparent);
+            margin: 20px 0 30px 0;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--green-dim);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .label-icon {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--green-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            height: 46px;
+            background: rgba(0, 255, 136, 0.03);
+            border: 1px solid var(--green-dim);
+            padding: 0 15px;
+            font-size: 14px;
+            color: var(--green);
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+
+        .input-field:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .input-field::placeholder {
+            color: rgba(0, 255, 136, 0.25);
+            letter-spacing: 1px;
+        }
+
+        /* 输入框装饰角 */
+        .input-corner {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-color: var(--green);
+            border-style: solid;
+        }
+        .input-corner.tl { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+        .input-corner.tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
+        .input-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
+        .input-corner.br { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+        .input-hint {
+            margin-top: 8px;
+            font-size: 9px;
+            color: var(--green-dark);
+            letter-spacing: 1px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            height: 48px;
+            background: transparent;
+            border: 1px solid var(--green);
+            color: var(--green);
+            font-size: 13px;
+            letter-spacing: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,136,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            background: var(--green);
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+        }
+
+        .status-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--green-dark);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 9px;
+            color: var(--green-dim);
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .status-dot.warning {
+            background: rgba(255, 200, 0, 0.8);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--green); }
+            50% { opacity: 0.4; box-shadow: none; }
+        }
+
+        /* 底部信息栏 */
+        .footer-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-top: 1px solid var(--green-dark);
+            background: rgba(0, 255, 136, 0.02);
+            font-size: 8px;
+            color: var(--green-dark);
+            letter-spacing: 1px;
+        }
+
+        .footer-bar span {
+            opacity: 0.8;
+        }
+
+        /* 外部装饰框 */
+        .outer-frame {
+            position: absolute;
+            top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border: 1px solid var(--green-dark);
+            pointer-events: none;
+        }
+
+        .outer-corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: var(--green-dim);
+            border-style: solid;
+        }
+        .outer-corner.tl { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+        .outer-corner.tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
+        .outer-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
+        .outer-corner.br { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+    </style>
+</head>
+<body>
+    <!-- 数据流背景 -->
+    <div class="data-stream" id="dataStream"></div>
+
+    <div class="login-container">
+        <!-- 外部装饰框 -->
+        <div class="outer-frame">
+            <div class="outer-corner tl"></div>
+            <div class="outer-corner tr"></div>
+            <div class="outer-corner bl"></div>
+            <div class="outer-corner br"></div>
+        </div>
+
+        <!-- 顶部标题栏 -->
+        <div class="header-bar">
+            <div class="header-left">
+                <div class="header-icon">◈</div>
+                <span class="header-title">SECURITY TERMINAL</span>
+            </div>
+            <div class="header-right">
+                <div class="header-stat">
+                    <div class="stat-dot"></div>
+                    <span>ENCRYPTED</span>
+                </div>
+                <div class="header-stat">
+                    <div class="stat-dot"></div>
+                    <span>v2.0.1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主体内容 -->
+        <div class="main-content">
+            <!-- 左侧指纹区域 -->
+            <div class="fingerprint-panel">
+                <div class="scan-label">SECURITY SCAN</div>
+                <div class="scan-box">
+                    <div class="corner-bl"></div>
+                    <div class="corner-br"></div>
+                    <div class="scan-grid"></div>
+                    <div class="hex-glow"></div>
+                    <svg class="hexagram-svg" viewBox="0 0 100 100">
+                        <!-- 中心发光圆 -->
+                        <circle class="hex-center-glow" cx="50" cy="50" r="25" />
+                        
+                        <!-- 最外层六芒星 - 慢速旋转 -->
+                        <g class="hex-layer-1">
+                            <!-- 上三角 -->
+                            <polygon points="50,8 85,57 15,57" stroke-width="1" opacity="0.9" />
+                            <!-- 下三角 -->
+                            <polygon points="50,92 15,43 85,43" stroke-width="1" opacity="0.9" />
+                        </g>
+                        
+                        <!-- 第二层六芒星 - 反向旋转 -->
+                        <g class="hex-layer-2 hex-pulse">
+                            <!-- 上三角 -->
+                            <polygon points="50,18 77,53 23,53" stroke-width="0.8" opacity="0.7" />
+                            <!-- 下三角 -->
+                            <polygon points="50,82 23,47 77,47" stroke-width="0.8" opacity="0.7" />
+                        </g>
+                        
+                        <!-- 第三层六芒星 - 慢速旋转 -->
+                        <g class="hex-layer-3">
+                            <!-- 上三角 -->
+                            <polygon points="50,28 69,49 31,49" stroke-width="0.6" opacity="0.5" />
+                            <!-- 下三角 -->
+                            <polygon points="50,72 31,51 69,51" stroke-width="0.6" opacity="0.5" />
+                        </g>
+                        
+                        <!-- 中心圆 -->
+                        <circle cx="50" cy="50" r="8" stroke-width="1" opacity="0.8" />
+                        <circle cx="50" cy="50" r="4" stroke-width="0.5" opacity="0.6" />
+                        <circle class="hex-dot" cx="50" cy="50" r="2" />
+                        
+                        <!-- 外圈装饰圆 -->
+                        <circle cx="50" cy="50" r="45" stroke-width="0.5" opacity="0.3" stroke-dasharray="4 4" />
+                        <circle cx="50" cy="50" r="40" stroke-width="0.3" opacity="0.2" />
+                        
+                        <!-- 顶点闪烁点 -->
+                        <g>
+                            <circle class="hex-dot" cx="50" cy="8" r="2.5" />
+                            <circle class="hex-dot" cx="85" cy="57" r="2.5" />
+                            <circle class="hex-dot" cx="15" cy="57" r="2.5" />
+                            <circle class="hex-dot" cx="50" cy="92" r="2.5" />
+                            <circle class="hex-dot" cx="85" cy="43" r="2.5" />
+                            <circle class="hex-dot" cx="15" cy="43" r="2.5" />
+                        </g>
+                        
+                        <!-- 连接线 -->
+                        <g class="hex-connector">
+                            <line x1="50" y1="8" x2="50" y2="28" />
+                            <line x1="50" y1="72" x2="50" y2="92" />
+                            <line x1="15" y1="43" x2="31" y2="49" />
+                            <line x1="85" y1="43" x2="69" y2="49" />
+                            <line x1="15" y1="57" x2="31" y2="51" />
+                            <line x1="85" y1="57" x2="69" y2="51" />
+                        </g>
+                        
+                        <!-- 内部小三角 -->
+                        <polygon points="50,38 58,50 50,62 42,50" stroke-width="0.5" opacity="0.6" />
+                    </svg>
+                    <div class="scan-line"></div>
+                </div>
+                <div class="scan-status">
+                    <span class="scan-text">恶意破解防护检测...</span>
+                    <div class="scan-progress"></div>
+                </div>
+            </div>
+
+            <!-- 右侧登录表单 -->
+            <div class="login-panel">
+                <div class="login-header">
+                    <div class="login-title">身份密钥认证</div>
+                    <div class="login-subtitle">AUTHENTICATION REQUIRED</div>
+                </div>
+
+                <div class="login-divider"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label class="input-label">
+                            <span class="label-icon">▣</span>
+                            密钥 / ACTIVATION CODE
+                        </label>
+                        <div class="input-wrapper">
+                            <div class="input-corner tl"></div>
+                            <div class="input-corner tr"></div>
+                            <div class="input-corner bl"></div>
+                            <div class="input-corner br"></div>
+                            <input type="password" class="input-field" id="activation-code" placeholder="请输入位密钥进行登录" maxlength="18" required>
+                        </div>
+                        <div class="input-hint">若无密钥联系Telegram:@HackhubTeam</div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">▶ 验证登录</button>
+
+                    <div class="status-section">
+                        <div class="status-row">
+                            <div class="status-item">
+                                <div class="status-dot"></div>
+                                <span>安全连接已建立</span>
+                            </div>
+                            <div class="status-item">
+                                <span>TLS 1.3</span>
+                            </div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-item">
+                                <div class="status-dot"></div>
+                                <span>系统状态正常</span>
+                            </div>
+                            <div class="status-item">
+                                <span id="current-time">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 底部信息栏 -->
+        <div class="footer-bar">
+            <span>HACKAPT SECURITY PLATFORM</span>
+            <span>© 2026 ALL RIGHTS RESERVED</span>
+        </div>
+    </div>
+
+    <script>
+        // 生成数据流背景
+        function createDataStream() {
+            const container = document.getElementById('dataStream');
+            const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+            const columnCount = Math.floor(window.innerWidth / 25);
+            
+            for (let i = 0; i < columnCount; i++) {
+                const column = document.createElement('div');
+                column.className = 'stream-column';
+                column.style.left = (i * 25 + Math.random() * 10) + 'px';
+                column.style.animationDuration = (8 + Math.random() * 12) + 's';
+                column.style.animationDelay = (Math.random() * 5) + 's';
+                
+                let text = '';
+                const length = 15 + Math.floor(Math.random() * 20);
+                for (let j = 0; j < length; j++) {
+                    text += chars[Math.floor(Math.random() * chars.length)] + ' ';
+                }
+                column.textContent = text;
+                container.appendChild(column);
+            }
+        }
+
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            const time = now.toTimeString().split(' ')[0];
+            document.getElementById('current-time').textContent = time;
+        }
+
+        // 登录处理
+        function handleLogin(e) {
+            e.preventDefault();
+            const code = document.getElementById('activation-code').value;
+            const btn = document.querySelector('.submit-btn');
+            
+            if (code.length !== 18) {
+                alert('请输入18位密钥');
+                return;
+            }
+            
+            btn.textContent = '▶ 验证中...';
+            btn.disabled = true;
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+
+        // 初始化
+        createDataStream();
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>

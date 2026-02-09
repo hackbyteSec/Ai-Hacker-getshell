@@ -1,0 +1,25 @@
+<!-- XHSecTeam 浮动导航栏组件 -->
+<!-- 使用方式: 调用 loadFloatingNav({ title: 'xxx', activePage: 'xxx', basePath: '../' }) -->
+
+<div class="floating-nav-inner" id="floatingNavInner">
+    <div class="floating-nav-indicator" id="floatingNavIndicator"></div>
+    <div class="floating-nav-left">
+        <div class="floating-nav-logo">
+            <span class="floating-nav-logo-badge">Ai</span>
+            <span id="floatingNavTitle">仪表盘</span>
+        </div>
+        <div class="floating-nav-sep"></div>
+        <button type="button" class="floating-nav-btn" data-page="index" data-link="aibug/index.html">批量扫描</button>
+        <button type="button" class="floating-nav-btn" data-page="single" data-link="aibug/single.html">单站渗透</button>
+        <button type="button" class="floating-nav-btn" data-page="vuln-analysis" data-link="aibug/vuln-analysis.html">AI分析</button>
+        <button type="button" class="floating-nav-btn" data-page="getshell" data-link="aibug/getshell.html">GetShell</button>
+        <button type="button" class="floating-nav-btn" data-page="poc-library" data-link="aibug/poc-library.html">POC库</button>
+        <button type="button" class="floating-nav-btn" data-page="logs" data-link="aibug/logs.html">日志</button>
+    </div>
+    <div class="floating-nav-right" id="floatingNavExtra">
+        <div class="floating-nav-avatar" onclick="openProfile()">
+            <img src="static/img/avatar.png" alt="用户头像" class="avatar-img" data-link="static/img/avatar.png">
+            <span class="avatar-vip-badge">VIP</span>
+        </div>
+    </div>
+</div>

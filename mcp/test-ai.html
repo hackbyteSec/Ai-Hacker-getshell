@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP AI接口测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121a2d;
+            --bg-card: #1a2342;
+            --accent-cyan: #00d4ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff4757;
+            --accent-yellow: #ffa502;
+            --accent-purple: #a855f7;
+            --text-primary: #e0e6ed;
+            --text-secondary: #8892a0;
+            --border-color: #2a3a5a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+        }
+        
+        /* 服务器配置 */
+        .config-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .config-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .config-label {
+            color: var(--text-secondary);
+            min-width: 100px;
+        }
+        
+        .config-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-badge.online {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+        }
+        
+        .status-badge.offline {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--accent-red);
+        }
+        
+        .status-badge.checking {
+            background: rgba(255, 165, 2, 0.2);
+            color: var(--accent-yellow);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        /* 测试卡片网格 */
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .test-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+        
+        .test-card.ai-feature {
+            border-left: 4px solid var(--accent-purple);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--accent-cyan);
+        }
+        
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        /* 表单 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        /* 按钮 */
+        .btn {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--accent-cyan);
+        }
+        
+        /* 结果显示区域 */
+        .result-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-title {
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .result-area {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.6;
+        }
+        
+        .result-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .result-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        /* 日志样式 */
+        .log-time {
+            color: var(--text-secondary);
+        }
+        
+        .log-info {
+            color: var(--accent-cyan);
+        }
+        
+        .log-success {
+            color: var(--accent-green);
+        }
+        
+        .log-error {
+            color: var(--accent-red);
+        }
+        
+        .log-warning {
+            color: var(--accent-yellow);
+        }
+        
+        .log-ai {
+            color: var(--accent-purple);
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* AI调用流程图 */
+        .flow-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .flow-title {
+            font-size: 1.1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .flow-step {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 15px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .flow-step.active {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .flow-step.running {
+            border-color: var(--accent-yellow);
+            animation: borderPulse 1.5s infinite;
+        }
+        
+        .flow-step.error {
+            border-color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.1);
+        }
+        
+        @keyframes borderPulse {
+            0%, 100% { border-color: var(--accent-yellow); }
+            50% { border-color: rgba(255, 165, 2, 0.5); }
+        }
+        
+        .flow-step-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .flow-step-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .flow-step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .flow-arrow {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .flow-steps {
+                flex-direction: column;
+            }
+            
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+        
+        /* 提示框 */
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box-title {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-box-content {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>🤖 MCP AI接口测试</h1>
+            <p>测试 AI攻击规划、智能打点、自动侦察 等AI功能是否正常工作</p>
+        </header>
+
+        <!-- 提示信息 -->
+        <div class="info-box">
+            <div class="info-box-title">
+                <span>💡</span>
+                <span>AI功能说明</span>
+            </div>
+            <div class="info-box-content">
+                AI功能需要配置 OpenAI 或 Anthropic API密钥才能正常工作。<br>
+                请在 <code>config/config.yaml</code> 中配置 <code>ai.api_key</code>，或设置环境变量 <code>OPENAI_API_KEY</code>。<br>
+                如果未配置API密钥，AI功能将返回模拟/离线结果。
+            </div>
+        </div>
+
+        <!-- 服务器配置 -->
+        <div class="config-section">
+            <div class="config-row">
+                <span class="config-label">服务器地址:</span>
+                <input type="text" class="config-input" id="serverUrl" value="http://127.0.0.1:5000" placeholder="http://127.0.0.1:5000">
+                <button class="btn btn-secondary" onclick="checkServer()" style="width: auto; padding: 10px 20px;">
+                    🔄 检测连接
+                </button>
+                <div class="status-badge checking" id="serverStatus">
+                    <span class="status-dot"></span>
+                    <span id="serverStatusText">未检测</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI调用流程图 -->
+        <div class="flow-section">
+            <div class="flow-title">📊 AI调用流程</div>
+            <div class="flow-steps">
+                <div class="flow-step" id="step1">
+                    <div class="flow-step-icon">📤</div>
+                    <div class="flow-step-title">发送请求</div>
+                    <div class="flow-step-desc">POST /execute</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" id="step2">
+                    <div class="flow-step-icon">⚙️</div>
+                    <div class="flow-step-title">MCP处理</div>
+                    <div class="flow-step-desc">参数验证</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" id="step3">
+                    <div class="flow-step-icon">🤖</div>
+                    <div class="flow-step-title">调用AI</div>
+                    <div class="flow-step-desc">OpenAI/Claude</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" id="step4">
+                    <div class="flow-step-icon">📥</div>
+                    <div class="flow-step-title">返回结果</div>
+                    <div class="flow-step-desc">JSON响应</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测试卡片 -->
+        <div class="test-grid">
+            <!-- AI攻击规划 -->
+            <div class="test-card ai-feature">
+                <div class="card-header">
+                    <span class="card-icon">🎯</span>
+                    <div>
+                        <div class="card-title">AI攻击规划</div>
+                        <div class="card-subtitle">ai_attack_plan</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    根据目标信息，AI生成完整的攻击计划，包括攻击阶段、推荐工具、注意事项等。
+                </div>
+                <div class="form-group">
+                    <label class="form-label">目标 (IP/域名/URL)</label>
+                    <input type="text" class="form-input" id="attackPlanTarget" placeholder="例如: 192.168.1.1 或 example.com">
+                </div>
+                <button class="btn btn-primary" onclick="testAttackPlan()" id="btnAttackPlan">
+                    <span>🚀</span>
+                    <span>生成攻击计划</span>
+                </button>
+            </div>
+
+            <!-- 智能自动打点 -->
+            <div class="test-card ai-feature">
+                <div class="card-header">
+                    <span class="card-icon">🔥</span>
+                    <div>
+                        <div class="card-title">智能自动打点</div>
+                        <div class="card-subtitle">auto_recon</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    AI驱动的全自动渗透测试，自动执行信息收集、漏洞扫描、并生成报告。
+                </div>
+                <div class="form-group">
+                    <label class="form-label">目标域名/IP</label>
+                    <input type="text" class="form-input" id="autoReconTarget" placeholder="例如: example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="autoReconFast" style="width: auto;"> 快速模式
+                    </label>
+                </div>
+                <button class="btn btn-primary" onclick="testAutoRecon()" id="btnAutoRecon">
+                    <span>🚀</span>
+                    <span>开始自动打点</span>
+                </button>
+            </div>
+
+            <!-- 智能侦察 -->
+            <div class="test-card ai-feature">
+                <div class="card-header">
+                    <span class="card-icon">🔍</span>
+                    <div>
+                        <div class="card-title">智能侦察</div>
+                        <div class="card-subtitle">intelligent_recon</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    AI驱动的深度自动化侦察，包含资产发现、指纹识别、JS分析、漏洞扫描。
+                </div>
+                <div class="form-group">
+                    <label class="form-label">目标URL</label>
+                    <input type="text" class="form-input" id="intelligentReconTarget" placeholder="例如: https://example.com">
+                </div>
+                <button class="btn btn-primary" onclick="testIntelligentRecon()" id="btnIntelligentRecon">
+                    <span>🚀</span>
+                    <span>开始智能侦察</span>
+                </button>
+            </div>
+
+            <!-- AI分析 -->
+            <div class="test-card ai-feature">
+                <div class="card-header">
+                    <span class="card-icon">🧠</span>
+                    <div>
+                        <div class="card-title">AI目标分析</div>
+                        <div class="card-subtitle">/ai/analyze</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    直接调用AI引擎分析目标，获取攻击建议和风险评估。
+                </div>
+                <div class="form-group">
+                    <label class="form-label">目标</label>
+                    <input type="text" class="form-input" id="aiAnalyzeTarget" placeholder="例如: 192.168.1.1">
+                </div>
+                <button class="btn btn-primary" onclick="testAiAnalyze()" id="btnAiAnalyze">
+                    <span>🚀</span>
+                    <span>AI分析</span>
+                </button>
+            </div>
+
+            <!-- 服务器健康检查 -->
+            <div class="test-card">
+                <div class="card-header">
+                    <span class="card-icon">💓</span>
+                    <div>
+                        <div class="card-title">服务健康检查</div>
+                        <div class="card-subtitle">/health</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    检查MCP服务器是否正常运行，返回服务状态和运行时间。
+                </div>
+                <button class="btn btn-primary" onclick="testHealth()" id="btnHealth">
+                    <span>🚀</span>
+                    <span>检查服务状态</span>
+                </button>
+            </div>
+
+            <!-- 工具列表 -->
+            <div class="test-card">
+                <div class="card-header">
+                    <span class="card-icon">🛠️</span>
+                    <div>
+                        <div class="card-title">工具列表</div>
+                        <div class="card-subtitle">/tools</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    获取所有已注册的工具列表，包括64个安全工具的详细信息。
+                </div>
+                <button class="btn btn-primary" onclick="testToolsList()" id="btnToolsList">
+                    <span>🚀</span>
+                    <span>获取工具列表</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果显示 -->
+        <div class="result-section">
+            <div class="result-header">
+                <div class="result-title">
+                    <span>📋</span>
+                    <span>执行结果</span>
+                </div>
+                <button class="btn btn-secondary" onclick="clearResults()" style="width: auto; padding: 8px 16px;">
+                    清空
+                </button>
+            </div>
+            <div class="result-area" id="resultArea">
+<span class="log-info">═══════════════════════════════════════════════════════════════</span>
+<span class="log-info">  MCP AI接口测试工具 - 等待测试...</span>
+<span class="log-info">═══════════════════════════════════════════════════════════════</span>
+
+<span class="log-warning">📌 测试前请确保:</span>
+   1. MCP服务器已启动 (python main.py)
+   2. 已配置AI API密钥 (config/config.yaml)
+   3. 服务器地址正确 (默认 http://127.0.0.1:5000)
+
+<span class="log-ai">🤖 AI功能列表:</span>
+   • ai_attack_plan   - 生成攻击计划
+   • auto_recon       - 智能自动打点
+   • intelligent_recon - 深度侦察
+   • /ai/analyze      - 目标分析
+
+</div>
+        </div>
+    </div>
+
+    <script>
+        // ===================== 工具函数 =====================
+        function getServerUrl() {
+            return document.getElementById('serverUrl').value.trim().replace(/\/$/, '');
+        }
+
+        function log(message, type = 'info') {
+            const area = document.getElementById('resultArea');
+            const time = new Date().toLocaleTimeString();
+            const span = document.createElement('span');
+            span.className = `log-${type}`;
+            span.textContent = `[${time}] ${message}\n`;
+            area.appendChild(span);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function logRaw(text, type = 'info') {
+            const area = document.getElementById('resultArea');
+            const span = document.createElement('span');
+            span.className = `log-${type}`;
+            span.textContent = text + '\n';
+            area.appendChild(span);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('resultArea').innerHTML = '<span class="log-info">结果已清空，等待新的测试...</span>\n';
+        }
+
+        function setButtonLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span><span>执行中...</span>';
+            } else {
+                btn.disabled = false;
+                // 恢复原始文本
+                const texts = {
+                    'btnAttackPlan': '<span>🚀</span><span>生成攻击计划</span>',
+                    'btnAutoRecon': '<span>🚀</span><span>开始自动打点</span>',
+                    'btnIntelligentRecon': '<span>🚀</span><span>开始智能侦察</span>',
+                    'btnAiAnalyze': '<span>🚀</span><span>AI分析</span>',
+                    'btnHealth': '<span>🚀</span><span>检查服务状态</span>',
+                    'btnToolsList': '<span>🚀</span><span>获取工具列表</span>'
+                };
+                btn.innerHTML = texts[btnId] || '<span>🚀</span><span>执行</span>';
+            }
+        }
+
+        function updateFlowStep(stepNum, status) {
+            // 重置所有步骤
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'running', 'error');
+            }
+            
+            // 设置当前步骤状态
+            if (stepNum > 0) {
+                for (let i = 1; i <= stepNum; i++) {
+                    const step = document.getElementById(`step${i}`);
+                    if (i < stepNum) {
+                        step.classList.add('active');
+                    } else if (status === 'running') {
+                        step.classList.add('running');
+                    } else if (status === 'error') {
+                        step.classList.add('error');
+                    } else {
+                        step.classList.add('active');
+                    }
+                }
+            }
+        }
+
+        // ===================== 服务器检测 =====================
+        async function checkServer() {
+            const badge = document.getElementById('serverStatus');
+            const text = document.getElementById('serverStatusText');
+            
+            badge.className = 'status-badge checking';
+            text.textContent = '检测中...';
+            
+            try {
+                const resp = await fetch(`${getServerUrl()}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (resp.ok) {
+                    const data = await resp.json();
+                    badge.className = 'status-badge online';
+                    text.textContent = `在线 (${data.uptime || 'OK'})`;
+                    log('服务器连接成功 ✓', 'success');
+                } else {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+            } catch (e) {
+                badge.className = 'status-badge offline';
+                text.textContent = '离线';
+                log(`服务器连接失败: ${e.message}`, 'error');
+            }
+        }
+
+        // ===================== 测试函数 =====================
+        
+        // 健康检查
+        async function testHealth() {
+            setButtonLoading('btnHealth', true);
+            updateFlowStep(1, 'running');
+            
+            log('正在检查服务健康状态...', 'info');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/health`);
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                log('服务健康检查成功 ✓', 'success');
+                logRaw(JSON.stringify(data, null, 2), 'success');
+            } catch (e) {
+                updateFlowStep(2, 'error');
+                log(`健康检查失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnHealth', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // 工具列表
+        async function testToolsList() {
+            setButtonLoading('btnToolsList', true);
+            updateFlowStep(1, 'running');
+            
+            log('正在获取工具列表...', 'info');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/tools`);
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                log(`获取工具列表成功 ✓ (共 ${data.total} 个工具)`, 'success');
+                
+                // 显示部分工具
+                if (data.tools && data.tools.length > 0) {
+                    logRaw('\n前10个工具:', 'info');
+                    data.tools.slice(0, 10).forEach((tool, i) => {
+                        logRaw(`  ${i+1}. ${tool.name} - ${tool.description?.substring(0, 40) || ''}`, 'info');
+                    });
+                    logRaw(`  ... 共 ${data.total} 个工具`, 'info');
+                }
+            } catch (e) {
+                updateFlowStep(2, 'error');
+                log(`获取工具列表失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnToolsList', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // AI攻击规划
+        async function testAttackPlan() {
+            const target = document.getElementById('attackPlanTarget').value.trim();
+            if (!target) {
+                log('请输入目标地址', 'warning');
+                return;
+            }
+            
+            setButtonLoading('btnAttackPlan', true);
+            updateFlowStep(1, 'running');
+            
+            log(`正在为目标 "${target}" 生成AI攻击计划...`, 'ai');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'ai_attack_plan',
+                        params: { target: target }
+                    })
+                });
+                
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                if (data.success) {
+                    log('AI攻击计划生成成功 ✓', 'success');
+                    logRaw('\n' + JSON.stringify(data.result, null, 2), 'ai');
+                } else {
+                    throw new Error(data.error || '未知错误');
+                }
+            } catch (e) {
+                updateFlowStep(3, 'error');
+                log(`AI攻击计划生成失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnAttackPlan', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // 智能自动打点
+        async function testAutoRecon() {
+            const target = document.getElementById('autoReconTarget').value.trim();
+            if (!target) {
+                log('请输入目标地址', 'warning');
+                return;
+            }
+            
+            const fastMode = document.getElementById('autoReconFast').checked;
+            
+            setButtonLoading('btnAutoRecon', true);
+            updateFlowStep(1, 'running');
+            
+            log(`正在对目标 "${target}" 执行智能自动打点...`, 'ai');
+            log(`模式: ${fastMode ? '快速' : '完整'}`, 'info');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'auto_recon',
+                        params: { 
+                            target: target,
+                            fast_mode: fastMode,
+                            deep_scan: !fastMode,
+                            web_scan: true
+                        }
+                    })
+                });
+                
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                if (data.success) {
+                    log('智能自动打点完成 ✓', 'success');
+                    logRaw('\n' + JSON.stringify(data.result, null, 2), 'ai');
+                } else {
+                    throw new Error(data.error || '未知错误');
+                }
+            } catch (e) {
+                updateFlowStep(3, 'error');
+                log(`智能自动打点失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnAutoRecon', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // 智能侦察
+        async function testIntelligentRecon() {
+            const target = document.getElementById('intelligentReconTarget').value.trim();
+            if (!target) {
+                log('请输入目标URL', 'warning');
+                return;
+            }
+            
+            setButtonLoading('btnIntelligentRecon', true);
+            updateFlowStep(1, 'running');
+            
+            log(`正在对目标 "${target}" 执行智能侦察...`, 'ai');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: 'intelligent_recon',
+                        params: { 
+                            target: target,
+                            deep_scan: true,
+                            include_js_analysis: true
+                        }
+                    })
+                });
+                
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                if (data.success) {
+                    log('智能侦察完成 ✓', 'success');
+                    log(`发现漏洞: ${data.result?.vulnerabilities_count || 0}`, 'info');
+                    log(`高危风险: ${data.result?.high_risk_count || 0}`, 'warning');
+                    logRaw('\n' + JSON.stringify(data.result, null, 2), 'ai');
+                } else {
+                    throw new Error(data.error || '未知错误');
+                }
+            } catch (e) {
+                updateFlowStep(3, 'error');
+                log(`智能侦察失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnIntelligentRecon', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // AI分析
+        async function testAiAnalyze() {
+            const target = document.getElementById('aiAnalyzeTarget').value.trim();
+            if (!target) {
+                log('请输入目标', 'warning');
+                return;
+            }
+            
+            setButtonLoading('btnAiAnalyze', true);
+            updateFlowStep(1, 'running');
+            
+            log(`正在对目标 "${target}" 执行AI分析...`, 'ai');
+            
+            try {
+                updateFlowStep(2, 'running');
+                const resp = await fetch(`${getServerUrl()}/ai/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target: target,
+                        context: {}
+                    })
+                });
+                
+                updateFlowStep(3, 'running');
+                const data = await resp.json();
+                updateFlowStep(4, 'active');
+                
+                if (data.success) {
+                    log('AI分析完成 ✓', 'success');
+                    logRaw('\n' + JSON.stringify(data.analysis, null, 2), 'ai');
+                } else {
+                    throw new Error(data.error || '未知错误');
+                }
+            } catch (e) {
+                updateFlowStep(3, 'error');
+                log(`AI分析失败: ${e.message}`, 'error');
+            }
+            
+            setButtonLoading('btnAiAnalyze', false);
+            setTimeout(() => updateFlowStep(0), 2000);
+        }
+
+        // ===================== 初始化 =====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // 自动检测服务器地址
+            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                document.getElementById('serverUrl').value = window.location.origin;
+            }
+            
+            // 自动检测服务器状态
+            setTimeout(checkServer, 500);
+        });
+    </script>
+</body>
+</html>
